@@ -77,7 +77,8 @@ app.get(['/', '/api'], (req, res) => {
 // ─── POST /api/pix/criar ──────────────────────────────────────────────────────
 app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
   try {
-    const { nome, email, cpf, telefone, cep, total, orderBump, orderId, fbc, fbp } = req.body || {};
+    const { nome, email, cpf, telefone, cep, total, orderBump, orderId, fbc, fbp,
+            utm_source, utm_campaign, utm_medium, utm_content, utm_term, src, sck } = req.body || {};
 
     if (!nome || !email || !cpf || !telefone || !total) {
       return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
@@ -114,9 +115,10 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
     if (diff > 0) products.push({ external_ref: 'frete', name: 'Frete', price: diff, quantity: 1 });
 
     const body = {
-      amount:      amountCents,
-      description: `Pedido Bazari #${orderId || Date.now()}`,
-      external_id: `bazari-${orderId || Date.now()}`,
+      amount:       amountCents,
+      description:  `Pedido Bazari #${orderId || Date.now()}`,
+      external_id:  `bazari-${orderId || Date.now()}`,
+      callback_url: 'https://bazari-nine.vercel.app/api/webhook/veno',
       payer: {
         name:     nome,
         email:    email,
@@ -125,6 +127,14 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
         ...(cep ? { zip_code: cep.replace(/\D/g, '') } : {}),
       },
       products,
+      // UTM tracking passado pelo frontend
+      ...(utm_source   ? { utm_source }   : {}),
+      ...(utm_campaign ? { utm_campaign } : {}),
+      ...(utm_medium   ? { utm_medium }   : {}),
+      ...(utm_content  ? { utm_content }  : {}),
+      ...(utm_term     ? { utm_term }     : {}),
+      ...(src          ? { src }          : {}),
+      ...(sck          ? { sck }          : {}),
     };
 
     console.log('[Veno API] Criando cobrança PIX:', JSON.stringify(body));

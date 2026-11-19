@@ -1484,6 +1484,14 @@ async function processCheckout() {
         orderId:   orderId,
         fbc:       getCookie('_fbc') || '',
         fbp:       getCookie('_fbp') || '',
+        // UTMs da URL para rastreamento Veno
+        utm_source:   (new URLSearchParams(window.location.search)).get('utm_source')   || '',
+        utm_campaign: (new URLSearchParams(window.location.search)).get('utm_campaign') || '',
+        utm_medium:   (new URLSearchParams(window.location.search)).get('utm_medium')   || '',
+        utm_content:  (new URLSearchParams(window.location.search)).get('utm_content')  || '',
+        utm_term:     (new URLSearchParams(window.location.search)).get('utm_term')     || '',
+        src:          (new URLSearchParams(window.location.search)).get('src')          || '',
+        sck:          (new URLSearchParams(window.location.search)).get('sck')          || '',
       }),
     });
 
