@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obrigado pelo seu pedido! — Bazari</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Meta Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '1448868326836788');
+    fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=1448868326836788&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel Code -->
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #F8FAFC;
+      color: #1E293B;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      background: #002B49;
+      color: #FFFFFF;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .top-bar svg {
+      width: 14px;
+      height: 14px;
+      color: #10B981;
+    }
+
+    /* HEADER */
+    .header {
+      background: #FFFFFF;
+      border-bottom: 1px solid #E2E8F0;
+      padding: 14px 24px;
+    }
+
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-logo {
+      height: 38px;
+      object-fit: contain;
+    }
+
+    .badge-paid {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ECFDF5;
+      color: #059669;
+      border: 1px solid #A7F3D0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12.5px;
+      font-weight: 700;
+    }
+
+    /* CONTAINER */
+    .container {
+      max-width: 740px;
+      width: 100%;
+      margin: 28px auto 60px;
+      padding: 0 16px;
+      flex: 1;
+    }
+
+    /* HERO CARD */
+    .hero-card {
+      background: #FFFFFF;
+      border-radius: 20px;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+      padding: 40px 28px;
+      text-align: center;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #10B981, #059669, #047857);
+    }
+
+    .check-icon-wrapper {
+      width: 80px;
+      height: 80px;
+      background: #D1FAE5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      animation: pulseGreen 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseGreen {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3); }
+      50% { transform: scale(1.05); box-shadow: 0 0 0 14px rgba(16, 185, 129, 0); }
+    }
+
+    .check-icon-wrapper svg {
+      width: 44px;
+      height: 44px;
+      color: #059669;
+    }
+
+    .hero-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0F172A;
+      margin-bottom: 8px;
+    }
+
+    .hero-subtitle {
+      font-size: 15px;
+      color: #64748B;
+      line-height: 1.6;
+      max-width: 520px;
+      margin: 0 auto 20px;
+    }
+
+    .order-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #F1F5F9;
+      border: 1px solid #CBD5E1;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      color: #334155;
+    }
+
+    .order-tag strong {
+      color: #0F172A;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+    }
+
+    /* TIMELINE */
+    .timeline-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid #E2E8F0;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F172A;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title svg {
+      width: 18px;
+      height: 18px;
+      color: #059669;
+    }
+
+    .timeline-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .timeline-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+    }
+
+    .step-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .step-icon.done {
+      background: #10B981;
+      color: #FFFFFF;
+    }
+
+    .step-icon.active {
+      background: #E0E7FF;
+      color: #4338CA;
+      border: 2px solid #6366F1;
+      animation: pulseActive 1.8s infinite;
+    }
+
+    @keyframes pulseActive {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .step-icon.pending {
+      background: #F1F5F9;
+      color: #94A3B8;
+      border: 1.5px solid #CBD5E1;
+    }
+
+    .step-content {
+      flex: 1;
+    }
+
+    .step-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1E293B;
+    }
+
+    .step-desc {
+      font-size: 12.5px;
+      color: #64748B;
+      margin-top: 2px;
+    }
+
+    /* ORDER DETAILS CARD */
+    .details-card {
+      background: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid #E2E8F0;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 13.5px;
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .item-thumb {
+      width: 48px;
+      height: 48px;
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      object-fit: contain;
+      padding: 4px;
+    }
+
+    .total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 2px dashed #E2E8F0;
+    }
+
+    .total-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0F172A;
+    }
+
+    .total-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #059669;
+    }
+
+    /* CTA BUTTONS */
+    .actions-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .btn-track {
+      background: #059669;
+      color: #FFFFFF;
+      font-size: 15.5px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 16px 24px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 18px rgba(5, 150, 105, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-track:hover {
+      background: #047857;
+      transform: translateY(-1px);
+    }
+
+    .btn-home {
+      background: #FFFFFF;
+      color: #475569;
+      border: 1.5px solid #CBD5E1;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      padding: 13px 20px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-home:hover {
+      background: #F8FAFC;
+      border-color: #94A3B8;
+      color: #1E293B;
+    }
+
+    /* FOOTER */
+    .footer {
+      background: #FFFFFF;
+      border-top: 1px solid #E2E8F0;
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 12px;
+      color: #94A3B8;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 600px) {
+      .hero-title { font-size: 22px; }
+      .hero-card { padding: 30px 18px; }
+      .container { margin: 16px auto 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    PEDIDO CONFIRMADO COM SUCESSO · PIX COMPENSADO
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html">
+        <img src="logo.png" alt="Bazari" class="brand-logo">
+      </a>
+      <div class="badge-paid">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Pagamento Confirmado
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="container">
+
+    <!-- HERO CARD -->
+    <div class="hero-card">
+      <div class="check-icon-wrapper">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h1 class="hero-title" id="greeting-title">Obrigado pela sua compra!</h1>
+      <p class="hero-subtitle">
+        Seu pagamento via PIX foi aprovado com sucesso. Já estamos cuidando de tudo para enviar sua lavadora o mais rápido possível!
+      </p>
+      <div class="order-tag">
+        <span>Número do Pedido:</span>
+        <strong id="order-id-display">#BR999888777</strong>
+      </div>
+    </div>
+
+    <!-- TIMELINE CARD -->
+    <div class="timeline-card">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Status do Pedido
+      </div>
+      <div class="timeline-steps">
+        <div class="timeline-step">
+          <div class="step-icon done">✓</div>
+          <div class="step-content">
+            <div class="step-title">Pagamento Aprovado via PIX</div>
+            <div class="step-desc" id="paid-time">Aprovado instantaneamente pelo banco</div>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-icon active">●</div>
+          <div class="step-content">
+            <div class="step-title" style="color: #4338CA;">Em Separação no Centro de Distribuição</div>
+            <div class="step-desc">Seu equipamento está sendo testado e embalado com proteção reforçada</div>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-icon pending">3</div>
+          <div class="step-content">
+            <div class="step-title" style="color: #64748B;">Envio por Transportadora Expressa</div>
+            <div class="step-desc">O código de rastreamento oficial será enviado por e-mail e WhatsApp</div>
+          </div>
+        </div>
+        <div class="timeline-step">
+          <div class="step-icon pending">4</div>
+          <div class="step-content">
+            <div class="step-title" style="color: #64748B;">Entrega no seu endereço</div>
+            <div class="step-desc">Previsão: 3 a 7 dias úteis com seguro total de entrega</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER DETAILS CARD -->
+    <div class="details-card">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        Resumo da Compra
+      </div>
+
+      <div class="item-row">
+        <div class="item-left">
+          <img src="https://images.tcdn.com.br/img/img_prod/606556/lavadora_de_alta_pressao_tramontina_1200w_1500_psi_com_mangueira_de_alta_pressao_3_m_127_v_3689_1_02844517208d17ba9b990fdf7867295d.jpg" alt="Tramontina" class="item-thumb">
+          <div>
+            <div style="font-weight: 700; color: #0F172A;">Lavadora Alta Pressão Tramontina 1200W</div>
+            <div style="font-size: 12.5px; color: #64748B;" id="variant-display">Voltagem: 127V · 1500 PSI</div>
+          </div>
+        </div>
+        <div style="font-weight: 700; color: #0F172A;">R$ 69,88</div>
+      </div>
+
+      <div id="bumps-container"></div>
+
+      <div class="item-row">
+        <div style="color: #64748B;">Forma de Pagamento</div>
+        <div style="font-weight: 700; color: #059669; display: flex; align-items: center; gap: 4px;">
+          <img src="pix-logo.png" alt="Pix" style="width: 14px; height: 14px;"> PIX (Compensado)
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div style="color: #64748B;">Frete</div>
+        <div style="font-weight: 700; color: #0F172A;">SEDEX Prioritário com Seguro</div>
+      </div>
+
+      <div class="total-row">
+        <span class="total-label">Total Pago:</span>
+        <span class="total-value" id="order-total-display">R$ 88,85</span>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="actions-group" style="margin-top: 24px;">
+        <a id="btn-track-order" href="rastreio.html" class="btn-track">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+          Acompanhar Envio do Pedido
+        </a>
+        <a href="index.html" class="btn-home">
+          Voltar à Loja
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>Bazari Loja Oficial &copy; 2026. Todos os direitos reservados.</p>
+    <p style="margin-top: 4px;">CNPJ: 45.182.903/0001-44 &middot; Atendimento: sac@bazari.com.br</p>
+  </footer>
+
+  <script>
+    // Recuperar parâmetros da URL
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get('pedido') || Math.floor(100000000 + Math.random() * 900000000);
+    const total = params.get('total') || '88,85';
+    const nome = params.get('nome') || '';
+    const variant = params.get('v') || '127V';
+    const bumps = params.get('bumps') || '';
+
+    // Preencher dados na tela
+    document.getElementById('order-id-display').textContent = `#BR${orderId}BZ`;
+    document.getElementById('order-total-display').textContent = `R$ ${total}`;
+    document.getElementById('variant-display').textContent = `Voltagem: ${variant} · 1500 PSI Tramontina`;
+    document.getElementById('btn-track-order').href = `rastreio.html?codigo=BR${orderId}BZ`;
+
+    if (nome) {
+      const primeiroNome = nome.trim().split(' ')[0];
+      document.getElementById('greeting-title').textContent = `Obrigado pela sua compra, ${primeiroNome}!`;
+    }
+
+    // Exibir hora atual do pagamento
+    const now = new Date();
+    const hora = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('paid-time').textContent = `Aprovado hoje às ${hora} via PIX instantâneo`;
+
+    // Renderizar Order Bumps se houver
+    if (bumps) {
+      const bumpsArr = bumps.split(';').filter(b => b.trim());
+      const container = document.getElementById('bumps-container');
+      bumpsArr.forEach(bump => {
+        const row = document.createElement('div');
+        row.className = 'item-row';
+        row.innerHTML = `
+          <div style="color: #059669; font-weight: 600;">+ ${bump}</div>
+          <div style="color: #059669; font-weight: 700;">Incluso</div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // Meta Pixel: Disparo Purchase ÚNICO por pedido (com proteção contra F5)
+    const trackedStorageKey = `tracked_purchase_${orderId}`;
+    if (!sessionStorage.getItem(trackedStorageKey)) {
+      sessionStorage.setItem(trackedStorageKey, '1');
+      const cleanValue = parseFloat(String(total).replace(',', '.')) || 69.88;
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'Purchase', {
+          value: cleanValue,
+          currency: 'BRL',
+          content_name: 'Lavadora Alta Pressão Tramontina 1200W',
+          content_type: 'product',
+          num_items: 1,
+          order_id: String(orderId)
+        });
+        console.log('[Meta Pixel] ✅ Evento Purchase contabilizado na tela de obrigado!', {
+          value: cleanValue,
+          order_id: orderId
+        });
+      }
+    }
+  </script>
+
+</body>
+</html>
