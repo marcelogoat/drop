@@ -16,8 +16,13 @@ const httpsAgent    = new https.Agent({ rejectUnauthorized: false });
 // Cache de status pagos (em memória)
 const paidPixStore = new Set();
 
+// ─── Healthcheck / Ping ───────────────────────────────────────────────────────
+app.get(['/', '/api'], (req, res) => {
+  res.json({ status: 'ok', message: 'Bazari Veno API online na Vercel', time: new Date().toISOString() });
+});
+
 // ─── POST /api/pix/criar ──────────────────────────────────────────────────────
-app.post('/api/pix/criar', async (req, res) => {
+app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
   try {
     const { nome, email, cpf, telefone, cep, total, orderBump, orderId } = req.body || {};
 
@@ -85,7 +90,7 @@ app.post('/api/pix/criar', async (req, res) => {
 });
 
 // ─── GET /api/pix/:id/status ──────────────────────────────────────────────────
-app.get('/api/pix/:id/status', async (req, res) => {
+app.get(['/api/pix/:id/status', '/pix/:id/status'], async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -111,7 +116,7 @@ app.get('/api/pix/:id/status', async (req, res) => {
 });
 
 // ─── POST /api/webhook/veno ───────────────────────────────────────────────────
-app.post('/api/webhook/veno', (req, res) => {
+app.post(['/api/webhook/veno', '/webhook/veno'], (req, res) => {
   const { event, data } = req.body || {};
   console.log('[Veno Webhook] Evento recebido:', event, data);
   if (data && data.id && (event === 'deposit.paid' || data.status === 'paid')) {
@@ -122,7 +127,7 @@ app.post('/api/webhook/veno', (req, res) => {
 });
 
 // ─── GET /api/pix/:id/simular-pago ────────────────────────────────────────────
-app.get('/api/pix/:id/simular-pago', (req, res) => {
+app.get(['/api/pix/:id/simular-pago', '/pix/:id/simular-pago'], (req, res) => {
   paidPixStore.add(req.params.id);
   console.log('[Veno Simulação] ✅ PIX marcado como PAGO para teste:', req.params.id);
   res.json({ success: true, message: 'Status do PIX alterado para PAID.', id: req.params.id });
