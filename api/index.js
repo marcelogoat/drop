@@ -14,9 +14,16 @@ const VENO_API_KEY  = 'veno_live_e5cb2d9a239405e05b1cf3440244c62785437adca507422
 const VENO_BASE_URL = 'https://beta.venopayments.com';
 const httpsAgent    = new https.Agent({ rejectUnauthorized: false });
 
-const META_PIXEL_ID  = '1448868326836788';
-const META_CAPI_TOKEN = 'EAGYyaNTSuUEBTACb7nM970YrUtqZC0qZAt9wwMlRg1spEZCeaCGqmj1PdqnkjkoZBcoXnBgACZAODU0jZAuxu6jZBHzZB0S8GrbZBVThZAeRUxk3HeAhfpXq6aA7yelLCZAxT2PaTfZCwo2ZANxW9VniySlsy4UoEFCqmJv18HHlntDVVQTnFhJdZB4du3FqcQo4ZCAgHeoBgZDZD';
-const META_CAPI_URL  = `https://graph.facebook.com/v19.0/${META_PIXEL_ID}/events`;
+const META_PIXELS = [
+  {
+    id: '1448868326836788',
+    token: 'EAGYyaNTSuUEBTACb7nM970YrUtqZC0qZAt9wwMlRg1spEZCeaCGqmj1PdqnkjkoZBcoXnBgACZAODU0jZAuxu6jZBHzZB0S8GrbZBVThZAeRUxk3HeAhfpXq6aA7yelLCZAxT2PaTfZCwo2ZANxW9VniySlsy4UoEFCqmJv18HHlntDVVQTnFhJdZB4du3FqcQo4ZCAgHeoBgZDZD'
+  },
+  {
+    id: '29370137919281276',
+    token: 'EAAQOKCi5psUBTDQlZAZBHt9GZCkrUeIIWtq0SxkEvjrM1jKZCiiGAo4CMHRnBZBdVaTyPsaq8hV8JhR3aqH8FdEGVFpzjLs68fIoRofXVwG9DEBZC6KR84oRXu7C05rzzWKt2qPL1bXpZAOKq6eUgvXjg9XVwX7o2nRaJUuwYHAlpbVaSGk1dhpUlMqioUeA7ZBXlQZDZD'
+  }
+];
 
 // Cache de status pagos (em memória)
 const paidPixStore = new Set();
@@ -57,13 +64,21 @@ async function sendMetaEvent({ eventName, eventId, userData = {}, customData = {
     // Remove undefined recursivamente
     const clean = JSON.parse(JSON.stringify(payload));
 
-    const res = await fetch(`${META_CAPI_URL}?access_token=${META_CAPI_TOKEN}`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(clean),
-    });
-    const result = await res.json();
-    console.log(`[Meta CAPI] ${eventName} → events_received:`, result.events_received, result.messages || '');
+    await Promise.allSettled(
+      META_PIXELS.map(async (pixel) => {
+        try {
+          const res = await fetch(`https://graph.facebook.com/v19.0/${pixel.id}/events?access_token=${pixel.token}`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(clean),
+          });
+          const result = await res.json();
+          console.log(`[Meta CAPI - Pixel ${pixel.id}] ${eventName} → events_received:`, result.events_received, result.messages || '');
+        } catch (subErr) {
+          console.error(`[Meta CAPI - Pixel ${pixel.id}] Erro:`, subErr.message);
+        }
+      })
+    );
   } catch (err) {
     console.error('[Meta CAPI] Erro ao enviar evento:', err.message);
   }
@@ -153,6 +168,13 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
       return res.status(venoRes.status).json({ error: data?.message || data?.error || 'Erro ao criar PIX', details: data });
     }
 
+    if (!global._orderCache) global._orderCache = {};
+    if (data.id) {
+      global._orderCache[data.id] = {
+        nome, email, cpf, telefone, cep, total: cleanTotal, orderId, fbc, fbp
+      };
+    }
+
     return res.json({
       id:             data.id,
       txid:           data.txid,
@@ -225,16 +247,21 @@ app.post(['/api/webhook/veno', '/webhook/veno'], async (req, res) => {
       console.log('[Veno Webhook] ✅ PIX confirmado como pago:', data.id);
 
       // ── Dispara Purchase no CAPI via webhook (mais confiável) ──
+      const cached = global._orderCache?.[data.id];
       await sendMetaEvent({
         eventName:  'Purchase',
         eventId:    `purchase-${data.id}`,
         userData:   {
-          email:    data.payer?.email,
-          telefone: data.payer?.phone,
-          nome:     data.payer?.name,
+          email:    data.payer?.email || cached?.email,
+          telefone: data.payer?.phone || cached?.telefone,
+          nome:     data.payer?.name  || cached?.nome,
+          cep:      data.payer?.zip_code || cached?.cep,
+          orderId:  data.id,
+          fbc:      cached?.fbc,
+          fbp:      cached?.fbp,
         },
         customData: {
-          value:        data.amount ? data.amount / 100 : undefined,
+          value:        data.amount ? data.amount / 100 : cached?.total,
           currency:     'BRL',
           content_ids:  ['lavadora-tramontina-1200w'],
           content_type: 'product',
