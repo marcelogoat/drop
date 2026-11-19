@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rastrear Pedido — Bazari</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #14453D;
+  --primary-hover: #0F3A33;
+  --teal: #0D9488;
+  --teal-hover: #0F766E;
+  --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: #F9FAFB;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+input { font-family: inherit; }
+
+/* ============ HERO & TOP BAR ============ */
+.hero-wrapper {
+  background: linear-gradient(135deg, #14453D 0%, #1a5a4f 50%, #0f3a33 100%);
+  padding-bottom: 48px;
+  position: relative;
+}
+
+.top-bar-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.back-link:hover { opacity: 0.8; }
+.back-link svg { width: 20px; height: 20px; }
+
+.header-logo-pill {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.header-logo-pill img {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+}
+
+.hero-content {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 32px 20px 0;
+  text-align: center;
+}
+
+.hero-icon-box {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-icon-box svg {
+  width: 54px;
+  height: 54px;
+  color: #FFFFFF;
+}
+
+.hero-title {
+  color: #FFFFFF;
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+/* ============ FLOATING FORM ============ */
+.main-container {
+  max-width: 680px;
+  width: 100%;
+  margin: -24px auto 0;
+  padding: 0 20px 60px;
+  position: relative;
+  z-index: 10;
+  flex: 1;
+}
+
+.search-form-card {
+  background: #FFFFFF;
+  border-radius: 18px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9CA3AF;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 16px 14px 44px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  color: #1F2937;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.search-input:focus {
+  background: #FFFFFF;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.search-btn {
+  background: var(--teal);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  white-space: nowrap;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.search-btn:hover:not(:disabled) {
+  background: var(--teal-hover);
+}
+
+.search-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.search-helper-text {
+  text-align: center;
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 12px;
+}
+
+/* ============ ALERTS ============ */
+.alert-error {
+  margin-top: 20px;
+  background: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  color: #991B1B;
+  padding: 14px 18px;
+  border-radius: 14px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.alert-cpf-banner {
+  margin-top: 20px;
+  background: #F0FDFA;
+  border: 1px solid #CCFBF1;
+  color: #134E4A;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* ============ RESULT CARDS ============ */
+.results-wrapper {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-box {
+  background: #FFFFFF;
+  border-radius: 18px;
+  padding: 24px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.card-brand-logo {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.tracking-code-label {
+  font-size: 13px;
+  color: #6B7280;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.tracking-code-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.5px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  color: #065F46;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 14px;
+}
+
+.status-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+}
+
+.info-two-col {
+  margin-top: 18px;
+  background: #F9FAFB;
+  border: 1px solid #F3F4F6;
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.info-icon-sq {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.info-icon-sq svg { width: 18px; height: 18px; }
+
+.info-item-label {
+  font-size: 12px;
+  color: #6B7280;
+  margin-bottom: 2px;
+}
+
+.info-item-value {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.product-summary-line {
+  margin-top: 16px;
+  font-size: 13.5px;
+  color: #4B5563;
+}
+
+.product-summary-line strong {
+  color: #111827;
+}
+
+.btn-invoice {
+  margin-top: 18px;
+  width: 100%;
+  padding: 14px;
+  background: #14453D;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.btn-invoice:hover { background: #0F3A33; }
+.btn-invoice svg { width: 18px; height: 18px; }
+
+/* ============ TIMELINE ============ */
+.timeline-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 24px;
+}
+
+.timeline-event {
+  position: relative;
+  display: flex;
+  gap: 16px;
+}
+
+.timeline-event:not(:last-child) .timeline-connector {
+  position: absolute;
+  left: 23px;
+  top: 50px;
+  bottom: -4px;
+  width: 2px;
+  background: #0D9488;
+}
+
+.timeline-icon-bubble {
+  position: relative;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #0D9488;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+  flex-shrink: 0;
+  ring: 4px solid #CCFBF1;
+}
+
+.timeline-icon-bubble svg { width: 22px; height: 22px; }
+
+.timeline-body {
+  flex: 1;
+  padding-bottom: 28px;
+}
+
+.timeline-event-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.timeline-event-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.timeline-event-date {
+  font-size: 12.5px;
+  color: #6B7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.timeline-event-desc {
+  font-size: 13.5px;
+  color: #4B5563;
+  line-height: 1.45;
+}
+
+.timeline-event-location {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0D9488;
+  margin-top: 6px;
+}
+
+.timeline-event-location svg { width: 14px; height: 14px; }
+
+/* ============ FOOTER ============ */
+.site-footer {
+  border-top: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  padding: 24px 20px;
+  text-align: center;
+  margin-top: auto;
+}
+
+.site-footer img {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.75;
+  margin: 0 auto 8px;
+  display: block;
+}
+
+.site-footer p {
+  font-size: 12px;
+  color: #6B7280;
+}
+
+@media (max-width: 640px) {
+  .hero-title { font-size: 26px; }
+  .search-form-card { flex-direction: column; }
+  .search-btn { width: 100%; }
+  .card-box { padding: 18px; }
+  .tracking-code-value { font-size: 20px; }
+}
+</style>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '1448868326836788');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1448868326836788&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+</head>
+<body>
+
+<!-- HERO & TOPBAR -->
+<div class="hero-wrapper">
+  <div class="top-bar-container">
+    <a href="index.html" class="back-link" aria-label="Voltar para a loja">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <span>Voltar</span>
+    </a>
+    <div class="header-logo-pill">
+      <img src="logo.png" alt="Bazari">
+    </div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-icon-box">
+      <!-- 3D Package Cube Icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+        <path d="M12 22V12"/>
+        <polyline points="3.29 7 12 12 20.71 7"/>
+        <path d="m7.5 4.27 9 5.15"/>
+      </svg>
+    </div>
+    <h1 class="hero-title">Rastreie seu Pedido</h1>
+    <p class="hero-subtitle">Acompanhe o status de entrega em tempo real</p>
+  </div>
+</div>
+
+<!-- MAIN SEARCH & RESULTS -->
+<main class="main-container">
+  
+  <!-- Floating Form -->
+  <form class="search-form-card" id="tracking-form" onsubmit="handleTrackSubmit(event)">
+    <div class="input-wrapper">
+      <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="tracking-input" placeholder="BR123456789BZ ou CPF" class="search-input" autocomplete="off" oninput="handleInputChange()">
+    </div>
+    <button type="submit" id="tracking-btn" class="search-btn" disabled>Rastrear</button>
+  </form>
+
+  <p class="search-helper-text">Digite o código de rastreio (BR + 9 dígitos + BZ) ou seu CPF</p>
+
+  <!-- Error Alert -->
+  <div id="tracking-error" class="alert-error" style="display: none;">
+    Código de rastreio não encontrado. Verifique os dados digitados ou aguarde até 24h úteis para ativação nos Correios.
+  </div>
+
+  <!-- CPF banner -->
+  <div id="cpf-banner" class="alert-cpf-banner" style="display: none;">
+    1 pedido encontrado para este CPF
+  </div>
+
+  <!-- Results Section -->
+  <div id="tracking-results" class="results-wrapper" style="display: none;">
+
+    <!-- CARD 1: Detalhes do Envio -->
+    <div class="card-box">
+      <img src="logo.png" alt="Bazari" class="card-brand-logo">
+      <div class="tracking-code-label">Código de Rastreio</div>
+      <div class="tracking-code-value" id="display-tracking-code">BR948192834BZ</div>
+
+      <div class="status-badge" id="display-badge">
+        <span class="status-badge-dot"></span>
+        <span id="display-status-text">Em Trânsito</span>
+      </div>
+
+      <div class="info-two-col">
+        <div class="info-item">
+          <div class="info-icon-sq">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div>
+            <div class="info-item-label">Destinatário</div>
+            <div class="info-item-value" id="display-customer-name">Cliente Bazari</div>
+          </div>
+        </div>
+
+        <div class="info-item">
+          <div class="info-icon-sq">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <div>
+            <div class="info-item-label">Destino</div>
+            <div class="info-item-value" id="display-city">São Paulo / SP</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-summary-line">
+        Produto: <strong id="display-product">Lavadora de Alta Pressão Tramontina 1200W</strong> <span>(x1)</span>
+      </div>
+
+      <button type="button" class="btn-invoice" id="invoice-btn" onclick="downloadInvoice()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Baixar Nota Fiscal</span>
+      </button>
+    </div>
+
+    <!-- CARD 2: Histórico de Movimentação -->
+    <div class="card-box">
+      <h3 class="timeline-title">Histórico de Movimentação</h3>
+
+      <div class="timeline-list">
+
+        <!-- Evento 1 (Atual) -->
+        <div class="timeline-event">
+          <div class="timeline-connector"></div>
+          <div class="timeline-icon-bubble">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          </div>
+          <div class="timeline-body">
+            <div class="timeline-event-header">
+              <h4 class="timeline-event-title">Objeto em trânsito - por favor aguarde</h4>
+              <span class="timeline-event-date" id="event-date-1">Hoje às 14:32</span>
+            </div>
+            <p class="timeline-event-desc">De Unidade de Tratamento em Curitiba / PR para Unidade de Distribuição Regional</p>
+            <div class="timeline-event-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Curitiba / PR</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evento 2 -->
+        <div class="timeline-event">
+          <div class="timeline-connector"></div>
+          <div class="timeline-icon-bubble">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg>
+          </div>
+          <div class="timeline-body">
+            <div class="timeline-event-header">
+              <h4 class="timeline-event-title">Objeto postado</h4>
+              <span class="timeline-event-date" id="event-date-2">Ontem às 16:40</span>
+            </div>
+            <p class="timeline-event-desc">Objeto recebido pelos Correios / Transportadora no Centro de Distribuição</p>
+            <div class="timeline-event-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>São Paulo / SP</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evento 3 -->
+        <div class="timeline-event">
+          <div class="timeline-icon-bubble">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <div class="timeline-body" style="padding-bottom: 0;">
+            <div class="timeline-event-header">
+              <h4 class="timeline-event-title">Pagamento confirmado e pedido faturado</h4>
+              <span class="timeline-event-date" id="event-date-3">Ontem às 10:15</span>
+            </div>
+            <p class="timeline-event-desc">Nota fiscal eletrônica emitida com sucesso e etiqueta de envio despachada</p>
+            <div class="timeline-event-location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Centro Logístico Bazari</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <img src="logo.png" alt="Bazari">
+  <p>&copy; 2026 Bazari &middot; Rastreamento seguro em tempo real</p>
+</footer>
+
+<script>
+// Format dates dynamically
+const now = new Date();
+const todayStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth()+1).padStart(2, '0')}/${now.getFullYear()} às 14:32`;
+const yesterday = new Date(Date.now() - 86400000);
+const yestStr = `${String(yesterday.getDate()).padStart(2, '0')}/${String(yesterday.getMonth()+1).padStart(2, '0')}/${yesterday.getFullYear()}`;
+
+document.getElementById('event-date-1').textContent = `Hoje (${todayStr})`;
+document.getElementById('event-date-2').textContent = `${yestStr} às 16:40`;
+document.getElementById('event-date-3').textContent = `${yestStr} às 10:15`;
+
+function handleInputChange() {
+  const input = document.getElementById('tracking-input');
+  const btn = document.getElementById('tracking-btn');
+  btn.disabled = !input.value.trim();
+}
+
+function handleTrackSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('tracking-input');
+  const val = input.value.trim().toUpperCase();
+  if (!val) return;
+
+  const btn = document.getElementById('tracking-btn');
+  btn.textContent = 'Buscando...';
+  btn.disabled = true;
+
+  document.getElementById('tracking-error').style.display = 'none';
+  document.getElementById('cpf-banner').style.display = 'none';
+  document.getElementById('tracking-results').style.display = 'none';
+
+  setTimeout(() => {
+    btn.textContent = 'Rastrear';
+    btn.disabled = false;
+
+    const isCpf = /^\d{11}$|^\d{3}\.\d{3}\.\d{3}\-\d{2}$/.test(val);
+    const isCode = /^BR\d+.*$/.test(val) || /^BZ\d+.*$/.test(val) || /^\d{8,12}$/.test(val);
+
+    if (isCpf || isCode || val.length >= 6) {
+      if (isCpf) {
+        document.getElementById('cpf-banner').style.display = 'block';
+        document.getElementById('display-tracking-code').textContent = 'BR' + Math.floor(100000000 + Math.random() * 900000000) + 'BZ';
+      } else {
+        document.getElementById('display-tracking-code').textContent = val.startsWith('BR') ? val : 'BR' + val + 'BZ';
+      }
+      document.getElementById('tracking-results').style.display = 'flex';
+      document.getElementById('tracking-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      document.getElementById('tracking-error').style.display = 'block';
+    }
+  }, 400);
+}
+
+function downloadInvoice() {
+  const btn = document.getElementById('invoice-btn');
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span style="display:inline-block; animation: spin 1s linear infinite;">⏳</span> Gerando PDF...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    btn.innerHTML = '✓ Nota Fiscal Baixada';
+    btn.style.background = '#059669';
+
+    // Create realistic PDF dummy download
+    const blob = new Blob([
+      '%PDF-1.4\n1 0 obj\n<< /Title (DANFE - Nota Fiscal Eletronica Bazari) /Author (Bazari Store) >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF'
+    ], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `DANFE-${document.getElementById('display-tracking-code').textContent}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    setTimeout(() => {
+      btn.innerHTML = original;
+      btn.style.background = '#14453D';
+      btn.disabled = false;
+    }, 2500);
+  }, 1000);
+}
+
+// Auto search if ?codigo= in URL
+const urlParams = new URLSearchParams(window.location.search);
+const queryCode = urlParams.get('codigo') || urlParams.get('c');
+if (queryCode) {
+  document.getElementById('tracking-input').value = queryCode;
+  document.getElementById('tracking-btn').disabled = false;
+  handleTrackSubmit(new Event('submit'));
+}
+</script>
+
+</body>
+</html>
