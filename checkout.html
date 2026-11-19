@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finalizar Compra â€” Bazari</title>
+<title>Finalizar Compra — Bazari</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -220,7 +220,7 @@ input, select { font-family: inherit; }
   margin: 18px 0;
 }
 
-/* OpÃ§Ã£o de Entrega */
+/* Opção de Entrega */
 .shipping-section {
   margin-bottom: 18px;
 }
@@ -808,6 +808,28 @@ input, select { font-family: inherit; }
   font-weight: 700;
   font-size: 14px;
 }
+
+/* Email domain suggestions */
+.email-sug-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.email-sug-badge:hover {
+  background: #00875F;
+  border-color: #00875F;
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
 </style>
 <!-- Meta Pixel Code -->
 <script>
@@ -882,7 +904,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
     <div class="product-row">
       <img class="product-img" src="https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_815918-MLA96087687835_102025-F.webp&w=1200&output=webp&q=85" alt="Lavadora Tramontina">
       <div class="product-meta">
-        <div class="product-name" id="product-title-display">Econ Lavadora De Alta PressÃ£o 1200w 1500 Psi Tramontina Cor amarelo</div>
+        <div class="product-name" id="product-title-display">Econ Lavadora De Alta Pressão 1200w 1500 Psi Tramontina Cor amarelo</div>
         <div class="product-unit-price" id="unit-price-display">R$ 69,88 /un</div>
       </div>
     </div>
@@ -899,16 +921,16 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
 
     <hr class="divider">
 
-    <!-- OpÃ§Ã£o de Entrega -->
+    <!-- Opção de Entrega -->
     <div class="shipping-section">
-      <span class="shipping-label">OpÃ§Ã£o de Entrega</span>
+      <span class="shipping-label">Opção de Entrega</span>
       <div class="shipping-options">
         <div class="shipping-card selected" id="ship-sedex" onclick="selectShipping('sedex')">
           <div class="shipping-left">
             <div class="shipping-radio"></div>
             <div class="shipping-info">
               <strong>SEDEX</strong>
-              <span>1-3 dias Ãºteis</span>
+              <span>1-3 dias úteis</span>
             </div>
           </div>
           <div class="shipping-price">R$ 18,97</div>
@@ -918,18 +940,18 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           <div class="shipping-left">
             <div class="shipping-radio"></div>
             <div class="shipping-info">
-              <strong>FRETE GRÃTIS</strong>
-              <span>15-25 dias Ãºteis</span>
+              <strong>FRETE GRÁTIS</strong>
+              <span>15-25 dias úteis</span>
             </div>
           </div>
-          <div class="shipping-price free">GrÃ¡tis</div>
+          <div class="shipping-price free">Grátis</div>
         </div>
       </div>
     </div>
 
     <hr class="divider">
 
-    <!-- PreÃ§os -->
+    <!-- Preços -->
     <div class="price-breakdown">
       <div class="price-row">
         <span id="subtotal-label">Subtotal (1 item)</span>
@@ -955,7 +977,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
   <section class="checkout-card">
     <h2 class="card-title">Finalizar Compra</h2>
 
-    <!-- Banner de UrgÃªncia -->
+    <!-- Banner de Urgência -->
     <div class="urgency-banner">
       <div class="urgency-line">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -963,7 +985,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
       </div>
       <div class="urgency-line">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-.5 2-2 3.5-3.5 5.5C6.5 10 6 12 6 14a6 6 0 0012 0c0-2-.5-4-2.5-6.5C14 5.5 12.5 4 12 2z"/></svg>
-        Ãšltimas unidades disponÃ­veis!
+        Últimas unidades disponíveis!
       </div>
     </div>
 
@@ -987,16 +1009,16 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
 
     <div class="form-group">
       <label class="form-label" for="cpf">CPF *</label>
-      <input class="form-input" type="text" id="cpf" placeholder="000.000.000-00" required maxlength="14">
+      <input class="form-input" type="text" id="cpf" placeholder="000.000.000-00" required maxlength="14" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
     </div>
 
-    <!-- EndereÃ§o de Entrega -->
-    <h3 class="section-subtitle">EndereÃ§o de Entrega</h3>
+    <!-- Endereço de Entrega -->
+    <h3 class="section-subtitle">Endereço de Entrega</h3>
 
     <div class="input-row">
       <div class="form-group">
         <label class="form-label" for="cep">CEP *</label>
-        <input class="form-input" type="text" id="cep" placeholder="00000-000" required maxlength="9" autocomplete="postal-code">
+        <input class="form-input" type="text" id="cep" placeholder="00000-000" required maxlength="9" autocomplete="postal-code" inputmode="numeric" pattern="[0-9]*">
       </div>
       <div class="form-group">
         <label class="form-label" for="state">Estado *</label>
@@ -1025,8 +1047,8 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
 
     <div class="input-row">
       <div class="form-group">
-        <label class="form-label" for="number">NÃºmero *</label>
-        <input class="form-input" type="text" id="number" placeholder="NÂº" required>
+        <label class="form-label" for="number">Número *</label>
+        <input class="form-input" type="text" id="number" placeholder="Nº" required>
       </div>
       <div class="form-group">
         <label class="form-label" for="complement">Complemento</label>
@@ -1037,8 +1059,8 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
     <!-- Order Bump: Garantia Estendida VIP -->
     <div class="order-bumps-container">
       <div class="order-bumps-title">
-        <span class="pulse-fire">ðŸ›¡ï¸</span>
-        <span>Oferta Especial: ProteÃ§Ã£o para seu equipamento</span>
+        <span class="pulse-fire">🛡️</span>
+        <span>Oferta Especial: Proteção para seu equipamento</span>
       </div>
 
       <!-- Bump: Garantia VIP -->
@@ -1049,7 +1071,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
             <span class="custom-checkbox"></span>
           </label>
           <div class="order-bump-title-wrap">
-            <div class="order-bump-action-badge gold">PROTEÃ‡ÃƒO TOTAL</div>
+            <div class="order-bump-action-badge gold">PROTEÇÃO TOTAL</div>
             <strong class="order-bump-product-name">Garantia Estendida VIP (1 Ano com Troca Expressa)</strong>
           </div>
         </div>
@@ -1059,7 +1081,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           </div>
           <div class="order-bump-details">
             <p class="order-bump-desc">
-              Cobertura completa contra queima de motor, picos elÃ©tricos e avarias. Troca expressa por uma nova sem taxas de assistÃªncia.
+              Cobertura completa contra queima de motor, picos elétricos e avarias. Troca expressa por uma nova sem taxas de assistência.
             </p>
             <div class="order-bump-pricing">
               <span class="bump-cur-price">+ R$ 14,90</span>
@@ -1082,7 +1104,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
             <strong>Pix</strong>
           </div>
         </div>
-        <span class="payment-badge pix">AprovaÃ§Ã£o imediata</span>
+        <span class="payment-badge pix">Aprovação imediata</span>
       </div>
 
 
@@ -1092,7 +1114,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
       <div class="pix-box" id="pix-container">
         <div style="display: flex; align-items: center; gap: 12px;">
           <img src="pix-logo.png" alt="Pix" style="width: 28px; height: 28px; object-fit: contain; flex-shrink: 0;">
-          <div>Ao clicar em finalizar compra, o cÃ³digo Pix oficial serÃ¡ gerado imediatamente para vocÃª escanear ou copiar e colar no seu banco.</div>
+          <div>Ao clicar em finalizar compra, o código Pix oficial será gerado imediatamente para você escanear ou copiar e colar no seu banco.</div>
         </div>
       </div>
         </div>
@@ -1117,7 +1139,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
 // URL params
 const params = new URLSearchParams(window.location.search);
 const variant = params.get('v') || '127V';
-document.getElementById('product-title-display').textContent = `Econ Lavadora De Alta PressÃ£o 1200w 1500 Psi Tramontina Cor amarelo (${variant})`;
+document.getElementById('product-title-display').textContent = `Econ Lavadora De Alta Pressão 1200w 1500 Psi Tramontina Cor amarelo (${variant})`;
 
 // Quantities & Calculations
 let quantity = 1;
@@ -1176,8 +1198,8 @@ function recalcTotal() {
     document.getElementById('shipping-name-label').textContent = 'Frete (SEDEX)';
     document.getElementById('shipping-cost-label').textContent = `R$ ${sedexCost.toFixed(2).replace('.', ',')}`;
   } else {
-    document.getElementById('shipping-name-label').textContent = 'Frete (FRETE GRÃTIS)';
-    document.getElementById('shipping-cost-label').textContent = 'GrÃ¡tis';
+    document.getElementById('shipping-name-label').textContent = 'Frete (FRETE GRÁTIS)';
+    document.getElementById('shipping-cost-label').textContent = 'Grátis';
   }
 
   document.getElementById('final-total').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
@@ -1322,7 +1344,7 @@ document.getElementById('cep').addEventListener('input', function(e) {
   if (v.length > 5) v = v.replace(/(\d{5})(\d{1,3})/, '$1-$2');
   e.target.value = v;
 
-  // Auto-busca viaCEP ao completar 8 dÃ­gitos
+  // Auto-busca viaCEP ao completar 8 dígitos
   if (v.length === 9) {
     const rawCep = v.replace(/\D/g, '');
     fetch(`https://viacep.com.br/ws/${rawCep}/json/`)
@@ -1340,7 +1362,7 @@ document.getElementById('cep').addEventListener('input', function(e) {
           clearError('state');
           document.getElementById('number').focus();
         } else {
-          setError('cep', 'CEP nÃ£o encontrado');
+          setError('cep', 'CEP não encontrado');
         }
       })
       .catch(() => {});
@@ -1368,10 +1390,57 @@ document.getElementById('card-cvv').addEventListener('input', function(e) {
 });
 
 // Strict Form Validation & Checkout processing
+
 function getCookie(name) {
   const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
   return v ? decodeURIComponent(v.pop()) : '';
 }
+
+// Autocomplete dinâmico de provedores de e-mail ao digitar '@'
+document.addEventListener('DOMContentLoaded', () => {
+  const emailInput = document.getElementById('email');
+  const emailSugBox = document.getElementById('email-suggestions');
+  const domains = ['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'];
+
+  if (emailInput && emailSugBox) {
+    emailInput.addEventListener('input', () => {
+      const val = emailInput.value.trim();
+      const atIndex = val.indexOf('@');
+      if (atIndex !== -1) {
+        const userPrefix = val.substring(0, atIndex);
+        const queryDomain = val.substring(atIndex + 1).toLowerCase();
+        const filtered = domains.filter(d => d.startsWith(queryDomain));
+        if (filtered.length > 0 && userPrefix.length > 0) {
+          emailSugBox.innerHTML = '';
+          filtered.forEach(d => {
+            const badge = document.createElement('span');
+            badge.className = 'email-sug-badge';
+            badge.textContent = '@' + d;
+            badge.onclick = () => {
+              emailInput.value = userPrefix + '@' + d;
+              emailSugBox.style.display = 'none';
+              if (typeof isValidEmail === 'function' && isValidEmail(emailInput.value)) {
+                emailInput.classList.remove('has-error');
+              }
+              const phoneInput = document.getElementById('telefone');
+              if (phoneInput) phoneInput.focus();
+            };
+            emailSugBox.appendChild(badge);
+          });
+          emailSugBox.style.display = 'flex';
+          return;
+        }
+      }
+      emailSugBox.style.display = 'none';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!emailInput.contains(e.target) && !emailSugBox.contains(e.target)) {
+        emailSugBox.style.display = 'none';
+      }
+    });
+  }
+});
 
 async function processCheckout() {
   try {
@@ -1394,35 +1463,35 @@ async function processCheckout() {
     if (!fullname) {
       errors.push({ id: 'fullname', msg: 'Informe seu nome completo' });
     } else if (!isValidName(fullname)) {
-      errors.push({ id: 'fullname', msg: 'Digite seu nome e sobrenome (mÃ­nimo 2 letras cada)' });
+      errors.push({ id: 'fullname', msg: 'Digite seu nome e sobrenome (mínimo 2 letras cada)' });
     }
 
     // 2. E-mail
     if (!email) {
       errors.push({ id: 'email', msg: 'Informe seu e-mail' });
     } else if (!isValidEmail(email)) {
-      errors.push({ id: 'email', msg: 'Informe um endereÃ§o de e-mail vÃ¡lido (ex: seu@email.com)' });
+      errors.push({ id: 'email', msg: 'Informe um endereço de e-mail válido (ex: seu@email.com)' });
     }
 
     // 3. Telefone
     if (!phone) {
       errors.push({ id: 'phone', msg: 'Informe seu telefone / WhatsApp' });
     } else if (!isValidPhone(phone)) {
-      errors.push({ id: 'phone', msg: 'Telefone invÃ¡lido. Inclua DDD + nÃºmero (ex: 11 98765-4321)' });
+      errors.push({ id: 'phone', msg: 'Telefone inválido. Inclua DDD + número (ex: 11 98765-4321)' });
     }
 
     // 4. CPF
     if (!cpf) {
       errors.push({ id: 'cpf', msg: 'Informe seu CPF' });
     } else if (!isValidCPF(cpf)) {
-      errors.push({ id: 'cpf', msg: 'CPF deve conter 11 dÃ­gitos' });
+      errors.push({ id: 'cpf', msg: 'CPF deve conter 11 dígitos' });
     }
 
     // 5. CEP
     if (!cep) {
       errors.push({ id: 'cep', msg: 'Informe o CEP' });
     } else if (!isValidCEP(cep)) {
-      errors.push({ id: 'cep', msg: 'CEP deve conter 8 dÃ­gitos' });
+      errors.push({ id: 'cep', msg: 'CEP deve conter 8 dígitos' });
     }
 
     // 6. Estado (UF)
@@ -1445,12 +1514,12 @@ async function processCheckout() {
       errors.push({ id: 'street', msg: 'Informe o nome da rua ou avenida' });
     }
 
-    // 10. NÃºmero
+    // 10. Número
     if (!number) {
-      errors.push({ id: 'number', msg: 'Informe o nÃºmero do endereÃ§o' });
+      errors.push({ id: 'number', msg: 'Informe o número do endereço' });
     }
 
-    // Se houver erros, destaca todos e rola atÃ© o primeiro
+    // Se houver erros, destaca todos e rola até o primeiro
     if (errors.length > 0) {
       errors.forEach(err => setError(err.id, err.msg));
       const firstEl = document.getElementById(errors[0].id);
@@ -1465,13 +1534,13 @@ async function processCheckout() {
         toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;background:#DC2626;color:#fff;font-weight:600;font-size:14px;padding:14px 28px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.3);text-align:center;max-width:90vw;display:flex;align-items:center;gap:10px;';
         document.body.appendChild(toast);
       }
-      toast.innerHTML = `âš ï¸ <span>Preencha os campos obrigatÃ³rios em vermelho acima.</span>`;
+      toast.innerHTML = `⚠️ <span>Preencha os campos obrigatórios em vermelho acima.</span>`;
       toast.style.display = 'flex';
       setTimeout(() => { if (toast) toast.style.display = 'none'; }, 5000);
       return;
     }
 
-    // Dados 100% vÃ¡lidos
+    // Dados 100% válidos
     const subtotal = quantity * unitPrice;
     const shipCost = shippingType === 'sedex' ? sedexCost : 0;
     const bumpsCost = bumpWarranty ? bumpWarrantyPrice : 0;
@@ -1479,7 +1548,7 @@ async function processCheckout() {
     const orderId = Math.floor(100000000 + Math.random() * 900000000);
     const bumpsParam = bumpWarranty ? 'Garantia VIP (1 Ano)' : '';
 
-    // BotÃ£o de loading
+    // Botão de loading
     const btn = document.getElementById('btn-finalizar') || document.querySelector('.btn-submit');
     const originalBtnHtml = btn ? btn.innerHTML : '';
     if (btn) {
@@ -1532,7 +1601,12 @@ async function processCheckout() {
       return;
     }
 
-    // Redirecionar para pagar.html passando dados do PIX
+    const _capiEventId = pix.capi_event_id || ('initiate-' + orderId);
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'InitiateCheckout', {}, { eventID: _capiEventId });
+    }
+
+    // Redirecionar para pagar.html passando dados do PIX + todas as UTMs
     const params = new URLSearchParams({
       total:     total,
       pedido:    orderId,
@@ -1545,7 +1619,7 @@ async function processCheckout() {
       pix_qr:    pix.qr_code_image || '',
       expires:   pix.expires_at || '',
     });
-        const curSearch = new URLSearchParams(window.location.search);
+    const curSearch = new URLSearchParams(window.location.search);
     ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid'].forEach(k => {
       const v = curSearch.get(k) || sessionStorage.getItem(k) || localStorage.getItem(k);
       if (v && !params.has(k)) {
@@ -1556,7 +1630,7 @@ async function processCheckout() {
 
   } catch(err) {
     console.error('[Checkout] Erro inesperado:', err);
-    alert('Erro ao processar compra: ' + (err.message || 'Verifique sua conexÃ£o e tente novamente.'));
+    alert('Erro ao processar compra: ' + (err.message || 'Verifique sua conexão e tente novamente.'));
     const btn = document.getElementById('btn-finalizar') || document.querySelector('.btn-submit');
     if (btn) {
       btn.disabled = false;
@@ -1570,11 +1644,11 @@ async function processCheckout() {
 function copyPixCode(btn) {
   const code = document.getElementById('pix-str').textContent;
   navigator.clipboard.writeText(code).then(() => {
-    btn.innerHTML = 'âœ“ CÃ³digo Pix copiado!';
+    btn.innerHTML = '✓ Código Pix copiado!';
     btn.style.background = '#0A734D';
     btn.style.color = '#FFFFFF';
     setTimeout(() => {
-      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar cÃ³digo Pix';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copiar código Pix';
       btn.style.background = '#F59E0B';
       btn.style.color = '#111827';
     }, 3000);
@@ -1584,4 +1658,3 @@ function copyPixCode(btn) {
 
 </body>
 </html>
-
