@@ -1000,11 +1000,12 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
     <div class="form-group">
       <label class="form-label" for="email">E-mail *</label>
       <input class="form-input" type="email" id="email" placeholder="seu@email.com" required autocomplete="email">
+      <div id="email-suggestions" style="display: none; margin-top: 8px; flex-wrap: wrap; gap: 6px;" aria-live="polite"></div>
     </div>
 
     <div class="form-group">
       <label class="form-label" for="phone">Telefone *</label>
-      <input class="form-input" type="tel" id="phone" placeholder="(11) 99999-9999" required autocomplete="tel">
+      <input class="form-input" type="tel" id="phone" placeholder="(11) 99999-9999" required autocomplete="tel" inputmode="numeric">
     </div>
 
     <div class="form-group">
@@ -1398,10 +1399,17 @@ function getCookie(name) {
 // Autocomplete dinâmico de provedores de e-mail ao digitar '@'
 (function initEmailSuggestions() {
   const emailInput = document.getElementById('email');
-  const emailSugBox = document.getElementById('email-suggestions');
-  const domains = ['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'];
+  if (!emailInput) return;
 
-  if (!emailInput || !emailSugBox) return;
+  let emailSugBox = document.getElementById('email-suggestions');
+  if (!emailSugBox) {
+    emailSugBox = document.createElement('div');
+    emailSugBox.id = 'email-suggestions';
+    emailSugBox.style.cssText = 'display: none; margin-top: 8px; flex-wrap: wrap; gap: 6px;';
+    emailInput.parentNode.appendChild(emailSugBox);
+  }
+
+  const domains = ['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com', 'icloud.com'];
 
   function handleEmailInput() {
     const val = emailInput.value.trim();
