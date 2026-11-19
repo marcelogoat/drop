@@ -1,8 +1,9 @@
-// api/index.js — Vercel Serverless Function para Veno Payments PIX
+// api/index.js — Vercel Serverless Function para Veno Payments PIX + Meta CAPI
 const express = require('express');
 const cors    = require('cors');
 const fetch   = require('node-fetch');
 const https   = require('https');
+const crypto  = require('crypto');
 
 const app = express();
 app.use(cors());
@@ -13,8 +14,60 @@ const VENO_API_KEY  = 'veno_live_e5cb2d9a239405e05b1cf3440244c62785437adca507422
 const VENO_BASE_URL = 'https://beta.venopayments.com';
 const httpsAgent    = new https.Agent({ rejectUnauthorized: false });
 
+const META_PIXEL_ID  = '1448868326836788';
+const META_CAPI_TOKEN = 'EAGYyaNTSuUEBTACb7nM970YrUtqZC0qZAt9wwMlRg1spEZCeaCGqmj1PdqnkjkoZBcoXnBgACZAODU0jZAuxu6jZBHzZB0S8GrbZBVThZAeRUxk3HeAhfpXq6aA7yelLCZAxT2PaTfZCwo2ZANxW9VniySlsy4UoEFCqmJv18HHlntDVVQTnFhJdZB4du3FqcQo4ZCAgHeoBgZDZD';
+const META_CAPI_URL  = `https://graph.facebook.com/v19.0/${META_PIXEL_ID}/events`;
+
 // Cache de status pagos (em memória)
 const paidPixStore = new Set();
+
+// ─── Helpers CAPI ─────────────────────────────────────────────────────────────
+function hashSHA256(value) {
+  if (!value) return undefined;
+  return crypto.createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+}
+
+async function sendMetaEvent({ eventName, eventId, userData = {}, customData = {}, sourceUrl = '' }) {
+  try {
+    const payload = {
+      data: [{
+        event_name:  eventName,
+        event_time:  Math.floor(Date.now() / 1000),
+        event_id:    eventId,
+        event_source_url: sourceUrl || 'https://bazari-nine.vercel.app/',
+        action_source: 'website',
+        user_data: {
+          em:  userData.email    ? [hashSHA256(userData.email)]    : undefined,
+          ph:  userData.telefone ? [hashSHA256(userData.telefone.replace(/\D/g, ''))] : undefined,
+          fn:  userData.nome     ? [hashSHA256(userData.nome.split(' ')[0])] : undefined,
+          ln:  userData.nome && userData.nome.includes(' ')
+                 ? [hashSHA256(userData.nome.split(' ').slice(1).join(' '))]
+                 : undefined,
+          zp:  userData.cep     ? [hashSHA256(userData.cep.replace(/\D/g, ''))]  : undefined,
+          external_id: userData.orderId ? [hashSHA256(userData.orderId)] : undefined,
+          client_ip_address: userData.ip   || undefined,
+          client_user_agent: userData.ua   || undefined,
+          fbc:  userData.fbc  || undefined,
+          fbp:  userData.fbp  || undefined,
+        },
+        custom_data: customData,
+      }],
+    };
+
+    // Remove undefined recursivamente
+    const clean = JSON.parse(JSON.stringify(payload));
+
+    const res = await fetch(`${META_CAPI_URL}?access_token=${META_CAPI_TOKEN}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(clean),
+    });
+    const result = await res.json();
+    console.log(`[Meta CAPI] ${eventName} → events_received:`, result.events_received, result.messages || '');
+  } catch (err) {
+    console.error('[Meta CAPI] Erro ao enviar evento:', err.message);
+  }
+}
 
 // ─── Healthcheck / Ping ───────────────────────────────────────────────────────
 app.get(['/', '/api'], (req, res) => {
@@ -24,14 +77,32 @@ app.get(['/', '/api'], (req, res) => {
 // ─── POST /api/pix/criar ──────────────────────────────────────────────────────
 app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
   try {
-    const { nome, email, cpf, telefone, cep, total, orderBump, orderId } = req.body || {};
+    const { nome, email, cpf, telefone, cep, total, orderBump, orderId, fbc, fbp } = req.body || {};
 
     if (!nome || !email || !cpf || !telefone || !total) {
       return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
     }
 
-    const cleanTotal = typeof total === 'string' ? parseFloat(total.replace(',', '.')) : Number(total);
-    const amountCents = Math.round(cleanTotal * 100);
+    const cleanTotal   = typeof total === 'string' ? parseFloat(total.replace(',', '.')) : Number(total);
+    const amountCents  = Math.round(cleanTotal * 100);
+    const clientIp     = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
+    const clientUa     = req.headers['user-agent'] || '';
+    const eventId      = `initiate-${orderId || Date.now()}`;
+
+    // ── Dispara InitiateCheckout no CAPI ──
+    sendMetaEvent({
+      eventName:  'InitiateCheckout',
+      eventId,
+      userData:   { email, telefone, nome, cep, orderId, ip: clientIp, ua: clientUa, fbc, fbp },
+      customData: {
+        value:        cleanTotal,
+        currency:     'BRL',
+        num_items:    orderBump ? 2 : 1,
+        content_ids:  ['lavadora-tramontina-1200w', ...(orderBump ? ['garantia-vip-12m'] : [])],
+        content_type: 'product',
+      },
+      sourceUrl: 'https://bazari-nine.vercel.app/checkout.html',
+    });
 
     const products = [
       { external_ref: 'lavadora-tramontina-1200w', name: 'Lavadora Alta Pressão Tramontina 1200W', price: 6988, quantity: 1 },
@@ -81,6 +152,7 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
       qr_code_image:  data.qr_code_image  || '',
       qr_code:        data.qr_code        || '',
       expires_at:     data.expires_at,
+      capi_event_id:  eventId,  // retorna ao front para deduplicação
     });
 
   } catch (err) {
@@ -105,9 +177,26 @@ app.get(['/api/pix/:id/status', '/pix/:id/status'], async (req, res) => {
     const data = await venoRes.json();
     if (!venoRes.ok) return res.status(venoRes.status).json({ error: data?.message || 'Erro ao consultar status', details: data });
 
-    if (data.status === 'paid') {
+    if (data.status === 'paid' && !paidPixStore.has(id)) {
       paidPixStore.add(id);
+
+      // ── Dispara Purchase no CAPI via polling ──
+      const cached = global._orderCache?.[id];
+      sendMetaEvent({
+        eventName:  'Purchase',
+        eventId:    `purchase-${id}`,
+        userData:   cached ? { email: cached.email, telefone: cached.telefone, nome: cached.nome, cep: cached.cep, orderId: id } : {},
+        customData: {
+          value:        cached ? cached.total : (data.amount / 100),
+          currency:     'BRL',
+          content_ids:  ['lavadora-tramontina-1200w'],
+          content_type: 'product',
+          order_id:     id,
+        },
+        sourceUrl: 'https://bazari-nine.vercel.app/obrigado.html',
+      });
     }
+
     return res.json(data);
   } catch (err) {
     console.error('[Veno API] Erro status:', err.message);
@@ -116,13 +205,36 @@ app.get(['/api/pix/:id/status', '/pix/:id/status'], async (req, res) => {
 });
 
 // ─── POST /api/webhook/veno ───────────────────────────────────────────────────
-app.post(['/api/webhook/veno', '/webhook/veno'], (req, res) => {
+app.post(['/api/webhook/veno', '/webhook/veno'], async (req, res) => {
   const { event, data } = req.body || {};
   console.log('[Veno Webhook] Evento recebido:', event, data);
+
   if (data && data.id && (event === 'deposit.paid' || data.status === 'paid')) {
-    paidPixStore.add(data.id);
-    console.log('[Veno Webhook] ✅ PIX confirmado como pago:', data.id);
+    if (!paidPixStore.has(data.id)) {
+      paidPixStore.add(data.id);
+      console.log('[Veno Webhook] ✅ PIX confirmado como pago:', data.id);
+
+      // ── Dispara Purchase no CAPI via webhook (mais confiável) ──
+      await sendMetaEvent({
+        eventName:  'Purchase',
+        eventId:    `purchase-${data.id}`,
+        userData:   {
+          email:    data.payer?.email,
+          telefone: data.payer?.phone,
+          nome:     data.payer?.name,
+        },
+        customData: {
+          value:        data.amount ? data.amount / 100 : undefined,
+          currency:     'BRL',
+          content_ids:  ['lavadora-tramontina-1200w'],
+          content_type: 'product',
+          order_id:     data.id,
+        },
+        sourceUrl: 'https://bazari-nine.vercel.app/obrigado.html',
+      });
+    }
   }
+
   res.status(200).json({ received: true });
 });
 
