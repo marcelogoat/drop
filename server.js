@@ -3,24 +3,35 @@ const express = require('express');
 const cors    = require('cors');
 const fetch   = require('node-fetch');
 const https   = require('https');
+const path    = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Servir arquivos estáticos da raiz
 app.use(express.static(__dirname));
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const VENO_API_KEY  = 'veno_live_e5cb2d9a239405e05b1cf3440244c62785437adca507422a';
 const VENO_BASE_URL = 'https://beta.venopayments.com';
 const httpsAgent    = new https.Agent({ rejectUnauthorized: false });
-// Armazenamento em memória para status pago (webhooks e simulações)
+
+// Armazenamento em memória para status pago
 const paidPixStore = new Set();
 
+// ─── Rotas Estáticas Explícitas ───────────────────────────────────────────────
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/index.html', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/checkout.html', (req, res) => res.sendFile(path.join(__dirname, 'checkout.html')));
+app.get('/pagar.html', (req, res) => res.sendFile(path.join(__dirname, 'pagar.html')));
+app.get('/obrigado.html', (req, res) => res.sendFile(path.join(__dirname, 'obrigado.html')));
+app.get('/rastreio.html', (req, res) => res.sendFile(path.join(__dirname, 'rastreio.html')));
 
 // ─── POST /api/pix/criar ──────────────────────────────────────────────────────
 app.post('/api/pix/criar', async (req, res) => {
   try {
-    const { nome, email, cpf, telefone, cep, total, orderBump, orderId } = req.body;
+    const { nome, email, cpf, telefone, cep, total, orderBump, orderId } = req.body || {};
 
     if (!nome || !email || !cpf || !telefone || !total) {
       return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
@@ -52,7 +63,7 @@ app.post('/api/pix/criar', async (req, res) => {
       products,
     };
 
-    console.log('[Veno] POST /api/v1/pix', JSON.stringify(body));
+    console.log('[Veno API] POST /api/v1/pix', JSON.stringify(body));
 
     const venoRes = await fetch(`${VENO_BASE_URL}/api/v1/pix`, {
       method:  'POST',
@@ -62,7 +73,7 @@ app.post('/api/pix/criar', async (req, res) => {
     });
 
     const data = await venoRes.json();
-    console.log('[Veno] Resposta criação:', JSON.stringify(data));
+    console.log('[Veno API] Resposta criação:', JSON.stringify(data));
 
     if (!venoRes.ok) {
       return res.status(venoRes.status).json({ error: data?.message || data?.error || 'Erro ao criar PIX', details: data });
@@ -80,8 +91,8 @@ app.post('/api/pix/criar', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('[Veno] Erro criação:', err.message);
-    res.status(500).json({ error: 'Erro interno.', details: err.message });
+    console.error('[Veno API] Erro criação:', err.message);
+    res.status(500).json({ error: 'Erro interno ao criar PIX.', details: err.message });
   }
 });
 
@@ -90,7 +101,6 @@ app.get('/api/pix/:id/status', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Se já foi marcado como pago por webhook ou simulação de teste
     if (paidPixStore.has(id)) {
       return res.json({ id, status: 'paid', paid_at: new Date().toISOString() });
     }
@@ -107,7 +117,7 @@ app.get('/api/pix/:id/status', async (req, res) => {
     }
     return res.json(data);
   } catch (err) {
-    console.error('[Veno] Erro status:', err.message);
+    console.error('[Veno API] Erro status:', err.message);
     res.status(500).json({ error: 'Erro ao consultar status.', details: err.message });
   }
 });
@@ -123,16 +133,20 @@ app.post('/api/webhook/veno', (req, res) => {
   res.status(200).json({ received: true });
 });
 
-// ─── GET /api/pix/:id/simular-pago (Para testes rápidos de homologação) ────────
+// ─── GET /api/pix/:id/simular-pago ────────────────────────────────────────────
 app.get('/api/pix/:id/simular-pago', (req, res) => {
   paidPixStore.add(req.params.id);
   console.log('[Veno Simulação] ✅ PIX marcado como PAGO para teste:', req.params.id);
   res.json({ success: true, message: 'Status do PIX alterado para PAID.', id: req.params.id });
 });
 
-// ─── Iniciar ──────────────────────────────────────────────────────────────────
-const PORT = 3002;
-app.listen(PORT, () => {
-  console.log(`\n🚀 Bazari backend em http://localhost:${PORT}`);
-  console.log(`   PIX: POST http://localhost:${PORT}/api/pix/criar\n`);
-});
+// ─── Iniciar Localmente se executado diretamente ──────────────────────────────
+if (require.main === module) {
+  const PORT = process.env.PORT || 3002;
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Bazari backend em http://localhost:${PORT}`);
+    console.log(`   PIX: POST http://localhost:${PORT}/api/pix/criar\n`);
+  });
+}
+
+module.exports = app;
