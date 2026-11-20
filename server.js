@@ -40,8 +40,8 @@ if (!global._orderCache) global._orderCache = {};
 
 // ─── Helpers CAPI ─────────────────────────────────────────────────────────────
 function hashSHA256(value) {
-  if (!value) return undefined;
-  return crypto.createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+  if (value === undefined || value === null) return undefined;
+  return crypto.createHash('sha256').update(String(value).trim().toLowerCase()).digest('hex');
 }
 
 async function sendMetaEvent({ eventName, eventId, userData = {}, customData = {}, sourceUrl = '' }) {
