@@ -789,7 +789,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
         <span>Valor</span>
         <span id="order-total-val">R$ 88,85</span>
       </div>
-      <a href="rastreio.html" id="track-order-link" class="track-link">Rastrear meu pedido</a>
+      <a href="https://bazari-rastreio.vercel.app/" id="track-order-link" class="track-link" target="_blank" rel="noopener noreferrer">Rastrear meu pedido</a>
     </div>
 
   </main>
@@ -857,7 +857,7 @@ document.getElementById('order-total-val').textContent = `R$ ${total}`;
 document.getElementById('order-id-val').textContent = orderId;
 const trackLinkEl = document.getElementById('track-order-link');
 if (trackLinkEl) {
-  trackLinkEl.href = `rastreio.html?codigo=BR${orderId}BZ`;
+  trackLinkEl.href = 'https://bazari-rastreio.vercel.app/';
 }
 
 const bumpsParam = params.get('bumps');
