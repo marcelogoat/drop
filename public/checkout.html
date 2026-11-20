@@ -929,8 +929,8 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           <div class="shipping-left">
             <div class="shipping-radio"></div>
             <div class="shipping-info">
-              <strong>SEDEX</strong>
-              <span>1-3 dias úteis</span>
+              <strong>SEDEX Express</strong>
+              <span>3 a 6 dias úteis</span>
             </div>
           </div>
           <div class="shipping-price">R$ 18,97</div>
@@ -940,8 +940,8 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           <div class="shipping-left">
             <div class="shipping-radio"></div>
             <div class="shipping-info">
-              <strong>FRETE GRÁTIS</strong>
-              <span>15-25 dias úteis</span>
+              <strong>Frete Grátis com Seguro</strong>
+              <span>8 a 12 dias úteis</span>
             </div>
           </div>
           <div class="shipping-price free">Grátis</div>
@@ -1196,10 +1196,10 @@ function recalcTotal() {
   document.getElementById('subtotal-val').textContent = `R$ ${subtotal.toFixed(2).replace('.', ',')}`;
 
   if (shippingType === 'sedex') {
-    document.getElementById('shipping-name-label').textContent = 'Frete (SEDEX)';
+    document.getElementById('shipping-name-label').textContent = 'Frete (SEDEX Express)';
     document.getElementById('shipping-cost-label').textContent = `R$ ${sedexCost.toFixed(2).replace('.', ',')}`;
   } else {
-    document.getElementById('shipping-name-label').textContent = 'Frete (FRETE GRÁTIS)';
+    document.getElementById('shipping-name-label').textContent = 'Frete (Grátis com Seguro)';
     document.getElementById('shipping-cost-label').textContent = 'Grátis';
   }
 
