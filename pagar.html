@@ -730,13 +730,10 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
     <div class="bank-alert">
       <div class="bank-alert-header">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Viu um aviso do seu banco? Fique tranquilo.
+        Seu banco mostrou um aviso?
       </div>
       <p class="bank-alert-text">
-        Alguns bancos (como Nubank, Itaú, Inter, C6) exibem um aviso padrão em todo pagamento PIX para pessoa jurídica — ele serve pra te proteger contra golpes de "falsa central". Esse aviso não é específico da nossa loja: aparece em qualquer PIX comercial.
-      </p>
-      <p class="bank-alert-text">
-        É seguro continuar: clique em <b>"Entendi"</b> ou <b>"Continuar"</b> no app do seu banco e conclua o pagamento normalmente. Seu PIX está protegido pelo Banco Central.
+        É normal: alguns bancos avisam em todo PIX para empresas. Toque em <b>"Continuar"</b> e conclua o pagamento.
       </p>
     </div>
 
@@ -787,9 +784,9 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
       <div id="bumps-summary-container"></div>
       <div class="order-row">
         <span>Valor</span>
-        <span id="order-total-val">R$ 88,85</span>
+        <span id="order-total-val">R$ 108,94</span>
       </div>
-      <a href="https://bazari-rastreio.vercel.app/" id="track-order-link" class="track-link" target="_blank" rel="noopener noreferrer">Rastrear meu pedido</a>
+      <a href="rastreio.html" id="track-order-link" class="track-link">Rastrear meu pedido</a>
     </div>
 
   </main>
@@ -822,10 +819,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
   </div>
 
   <div class="payment-icons-row">
-    <div class="pay-card-icon">MC</div>
-    <div class="pay-card-icon">VISA</div>
     <div class="pay-card-icon" title="PIX"><img src="pix-logo.png" alt="PIX" style="width: 18px; height: 18px; object-fit: contain;"></div>
-    <div class="pay-card-icon">BOLETO</div>
   </div>
 
 </div>
@@ -850,14 +844,14 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
 <script>
 // Leitura dos parâmetros
 const params = new URLSearchParams(window.location.search);
-const total = params.get('total') || '88,85';
+const total = params.get('total') || '108,94';
 const orderId = params.get('pedido') || Math.floor(100000000 + Math.random() * 900000000);
 
 document.getElementById('order-total-val').textContent = `R$ ${total}`;
 document.getElementById('order-id-val').textContent = orderId;
 const trackLinkEl = document.getElementById('track-order-link');
 if (trackLinkEl) {
-  trackLinkEl.href = 'https://bazari-rastreio.vercel.app/';
+  trackLinkEl.href = "rastreio.html";
 }
 
 const bumpsParam = params.get('bumps');

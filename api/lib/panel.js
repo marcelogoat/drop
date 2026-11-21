@@ -1,6 +1,16 @@
 // api/lib/panel.js — pedidos, rastreamento de visitantes e API do painel /admin.
 const crypto = require('crypto');
 const store  = require('./store');
+const rastreio = require('./rastreio');
+const email = require('./email');
+
+// ─── Configuração do painel (liga/desliga recursos) ───────────────────────────
+const CONFIG_DEFAULT = { autoRastreio: true, emailCliente: true, emailPixGerado: true };
+async function getConfig() {
+  const c = await store.getJSON('config');
+  return { ...CONFIG_DEFAULT, ...(c || {}) };
+}
+async function setConfig(c) { await store.setJSON('config', { ...CONFIG_DEFAULT, ...c }); }
 
 // ─── Config do painel ─────────────────────────────────────────────────────────
 // Em produção (Vercel) a senha vem SÓ da variável ADMIN_PASS — o repositório é
@@ -106,7 +116,64 @@ async function markPaid(pixId, via, extra = {}) {
   pushEvent(order, 'paid', `Pagamento confirmado (${via})`);
   await saveOrder(order);
   await store.hincrby(`stats:${dayKey()}`, 'paid', 1);
+  if (await emitirRastreioSeLigado(order)) await saveOrder(order);
+  await notificarPagamentoPorEmail(order);
   return true;
+}
+
+// Envia o e-mail "falta só o pagamento" quando o PIX é gerado (uma vez por pedido).
+async function notificarPixGeradoPorEmail(order, pixCode) {
+  try {
+    const cfg = await getConfig();
+    const to = order && order.customer && order.customer.email;
+    if (!cfg.emailPixGerado || !order || order.emailPixEnviado || !to || !email.configurado()) return;
+    const { subject, html } = email.pixGerado(order, pixCode, SITE_URL);
+    const r = await email.enviar({ to, subject, html });
+    if (r.ok) {
+      order.emailPixEnviado = true;
+      pushEvent(order, 'email', `E-mail "falta pagar" enviado para ${to}`);
+      await saveOrder(order);
+    } else if (!r.skipped) {
+      console.error('[E-mail PIX] Falha ao enviar para', to, '-', r.motivo);
+    }
+  } catch (e) { console.error('[E-mail PIX]', e.message); }
+}
+
+// Envia o e-mail de "pagamento confirmado" (uma vez por pedido). Nunca derruba
+// o fluxo de pagamento: qualquer erro é só registrado.
+async function notificarPagamentoPorEmail(order) {
+  try {
+    const cfg = await getConfig();
+    const to = order.customer && order.customer.email;
+    if (!cfg.emailCliente || order.emailEnviado || !to || !email.configurado()) return;
+    const { subject, html } = email.pagamentoConfirmado(order, order.rastreioCodigo, SITE_URL);
+    const r = await email.enviar({ to, subject, html });
+    if (r.ok) {
+      order.emailEnviado = true;
+      pushEvent(order, 'email', `E-mail de confirmação enviado para ${to}`);
+      await saveOrder(order);
+    } else if (!r.skipped) {
+      console.error('[E-mail] Falha ao enviar para', to, '-', r.motivo);
+    }
+  } catch (e) { console.error('[E-mail]', e.message); }
+}
+
+// Emissão automática do rastreio (se ligada em Configurações). Muta o pedido e
+// retorna true se emitiu — quem chama salva. Usada no pagamento (webhook/consulta)
+// e ao marcar pago manualmente no painel.
+async function emitirRastreioSeLigado(order) {
+  try {
+    const cfg = await getConfig();
+    if (cfg.autoRastreio && !order.rastreioCodigo) {
+      const r = await rastreio.emitirDoPedido(order);
+      if (r && r.codigo) {
+        order.rastreioCodigo = r.codigo;
+        pushEvent(order, 'rastreio', `Rastreio emitido automaticamente: ${r.codigo}`);
+        return true;
+      }
+    }
+  } catch (e) { console.error('[Rastreio auto]', e.message); }
+  return false;
 }
 
 // Status da Veno → status do painel. (doc: pending, paid, expired, cancelled,
@@ -348,7 +415,21 @@ function register(app) {
   });
 
   app.get(both('/admin/me'), requireAdmin, (req, res) => {
-    res.json({ user: ADMIN_USER, storage: store.mode, webhookUrl: WEBHOOK_URL });
+    res.json({ user: ADMIN_USER, storage: store.mode, webhookUrl: WEBHOOK_URL, emailConfigurado: email.configurado(), emailFrom: email.EMAIL_FROM });
+  });
+
+  app.get(both('/admin/config'), requireAdmin, async (req, res) => {
+    try { res.json(await getConfig()); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+  app.put(both('/admin/config'), requireAdmin, async (req, res) => {
+    try {
+      const cfg = await getConfig();
+      if (req.body && req.body.autoRastreio !== undefined) cfg.autoRastreio = !!req.body.autoRastreio;
+      if (req.body && req.body.emailCliente !== undefined) cfg.emailCliente = !!req.body.emailCliente;
+      if (req.body && req.body.emailPixGerado !== undefined) cfg.emailPixGerado = !!req.body.emailPixGerado;
+      await setConfig(cfg);
+      res.json(cfg);
+    } catch (e) { res.status(500).json({ error: e.message }); }
   });
 
   // ── Pedidos ──
@@ -418,6 +499,8 @@ function register(app) {
           o.status = 'paid'; o.paidAt = new Date().toISOString(); o.paidVia = 'manual';
           pushEvent(o, 'paid', 'Marcado como pago manualmente');
           await store.hincrby(`stats:${dayKey()}`, 'paid', 1);
+          await emitirRastreioSeLigado(o);
+          await notificarPagamentoPorEmail(o);
         } else if (status === 'pending' && o.status === 'paid') {
           o.status = 'pending'; o.paidAt = null; o.paidVia = null;
           pushEvent(o, 'status', 'Pagamento desmarcado manualmente');
@@ -533,4 +616,4 @@ function register(app) {
   });
 }
 
-module.exports = { SITE_URL, WEBHOOK_URL, register, createOrder, markPaid, setGatewayStatus, normalizeStatus, getOrderByPix, getOrder, requireAdmin, storeMode: store.mode };
+module.exports = { SITE_URL, WEBHOOK_URL, register, createOrder, markPaid, setGatewayStatus, normalizeStatus, getOrderByPix, getOrder, notificarPixGeradoPorEmail, requireAdmin, storeMode: store.mode };

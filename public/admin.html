@@ -328,6 +328,10 @@ td .sub { color: var(--muted); font-size: 12px; }
         <span class="lbl">Ao vivo</span>
         <span class="count live" id="nav-live">0</span>
       </button>
+      <button data-view="rastreio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <span class="lbl">Rastreio</span>
+      </button>
       <button data-view="settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span class="lbl">Configurações</span>
@@ -465,6 +469,28 @@ td .sub { color: var(--muted); font-size: 12px; }
       </div>
     </div>
 
+    <!-- ─── Rastreio ─── -->
+    <div class="content view hidden" id="view-rastreio">
+      <div class="kpis" id="rastreio-kpis"></div>
+      <div class="card">
+        <div class="filters">
+          <input class="input search" id="r-q" placeholder="Buscar por código, cliente, CPF, produto ou cidade">
+          <select class="select" id="r-status"><option value="">Todos os status</option></select>
+          <button class="btn btn-primary" id="r-new-btn" style="margin-left:auto">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Novo rastreio
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Código</th><th>Cliente</th><th>Produto</th><th>Rota</th><th>Frete</th><th>Status</th><th>Criado</th></tr></thead>
+            <tbody id="rastreio-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="muted" style="padding:0 2px">Estes rastreios são os mesmos do site <b>bazari-rastreio</b>. O que você cadastra aqui aparece lá para o cliente, e vice-versa.</p>
+    </div>
+
     <!-- ─── Configurações ─── -->
     <div class="content view hidden" id="view-settings">
       <div class="card">
@@ -475,6 +501,29 @@ td .sub { color: var(--muted); font-size: 12px; }
             <input class="input" id="webhook-url" readonly>
             <button class="btn" id="copy-webhook">Copiar</button>
           </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Rastreio</h3></div>
+        <div class="card-b">
+          <div class="setting">
+            <div class="txt"><b>Emitir rastreio automaticamente</b><span class="muted">Quando um pedido for pago, cria sozinho um rastreio automático (código BR…BZ, envio de São Paulo) com os dados do pedido.</span></div>
+            <label class="switch"><input type="checkbox" id="set-auto-rastreio"><span></span></label>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>E-mail ao cliente</h3></div>
+        <div class="card-b">
+          <div class="setting">
+            <div class="txt"><b>E-mail "falta só o pagamento" (ao gerar o PIX)</b><span class="muted">Assim que o pedido é gerado, envia o código PIX por e-mail como lembrete para o cliente pagar.</span></div>
+            <label class="switch"><input type="checkbox" id="set-email-pix"><span></span></label>
+          </div>
+          <div class="setting">
+            <div class="txt"><b>E-mail de pagamento confirmado + rastreio</b><span class="muted">Quando o pedido for pago, envia ao cliente o resumo e o código de rastreio.</span></div>
+            <label class="switch"><input type="checkbox" id="set-email-cliente"><span></span></label>
+          </div>
+          <div id="email-status" style="margin-top:12px"></div>
         </div>
       </div>
       <div class="card">
@@ -642,6 +691,7 @@ td .sub { color: var(--muted); font-size: 12px; }
     overview: ['Visão geral', 'Resumo da loja no período'],
     orders: ['Pedidos', 'Todos os PIX gerados no checkout'],
     live: ['Ao vivo', 'Visitantes no site neste momento'],
+    rastreio: ['Rastreio', 'Códigos de rastreio dos pedidos enviados'],
     settings: ['Configurações', 'Webhook, preferências e armazenamento'],
   };
   let currentView = 'overview';
@@ -876,6 +926,7 @@ td .sub { color: var(--muted); font-size: 12px; }
           <dt>Produto</dt><dd>${(o.items || []).map(i => `${esc(i.name)} <span class="muted">(${brl(i.price)}${i.quantity > 1 ? ' × ' + i.quantity : ''})</span>`).join('<br>') || '—'}</dd>
           <dt>Voltagem / Qtd</dt><dd>${esc(o.variant || '—')} · ${esc(o.quantity || 1)} un.</dd>
           <dt>Frete</dt><dd>${o.shipping === 'sedex' ? 'SEDEX Express' : o.shipping === 'free' ? 'Frete grátis' : esc(o.shipping || '—')}</dd>
+          <dt>Rastreio</dt><dd>${o.rastreioCodigo ? `<a href="/rastreio.html?codigo=${encodeURIComponent(o.rastreioCodigo)}" target="_blank" rel="noopener" class="num">${esc(o.rastreioCodigo)}</a>` : '<span class="muted">—</span>'}</dd>
           <dt>ID do PIX</dt><dd class="num" style="font-size:12.5px">${esc(o.pixId || '—')}</dd>
           ${o.endToEndId ? `<dt>ID E2E (banco)</dt><dd class="num" style="font-size:12.5px">${esc(o.endToEndId)}</dd>` : ''}
         </dl>
@@ -1036,6 +1087,26 @@ td .sub { color: var(--muted); font-size: 12px; }
 
   // ─── Configurações ───────────────────────────────────────────
   $('#copy-webhook').onclick = () => navigator.clipboard.writeText($('#webhook-url').value).then(() => toast('Copiado', 'URL do webhook copiada.'));
+  $('#set-auto-rastreio').onchange = async e => {
+    try { await api('/admin/config', { method: 'PUT', body: { autoRastreio: e.target.checked } }); toast('Preferência salva', e.target.checked ? 'Emissão automática ligada.' : 'Emissão automática desligada.'); }
+    catch (err) { e.target.checked = !e.target.checked; if (err.message !== 'unauth') toast('Erro', err.message, 'red'); }
+  };
+  $('#set-email-cliente').onchange = async e => {
+    try { await api('/admin/config', { method: 'PUT', body: { emailCliente: e.target.checked } }); toast('Preferência salva', e.target.checked ? 'Envio de e-mail ligado.' : 'Envio de e-mail desligado.'); }
+    catch (err) { e.target.checked = !e.target.checked; if (err.message !== 'unauth') toast('Erro', err.message, 'red'); }
+  };
+  $('#set-email-pix').onchange = async e => {
+    try { await api('/admin/config', { method: 'PUT', body: { emailPixGerado: e.target.checked } }); toast('Preferência salva', e.target.checked ? 'E-mail do PIX ligado.' : 'E-mail do PIX desligado.'); }
+    catch (err) { e.target.checked = !e.target.checked; if (err.message !== 'unauth') toast('Erro', err.message, 'red'); }
+  };
+  function renderEmailStatus(me) {
+    const el = $('#email-status'); if (!el) return;
+    if (me.emailConfigurado) {
+      el.innerHTML = `<div class="notice ok">E-mail configurado. Remetente: <b>${esc(me.emailFrom || '')}</b>. ${/resend\.dev/.test(me.emailFrom || '') ? 'Remetente de teste: o Resend só entrega para o e-mail dono da conta. Verifique seu domínio e defina EMAIL_FROM para enviar aos clientes.' : ''}</div>`;
+    } else {
+      el.innerHTML = `<div class="notice warn">Chave do Resend ainda não configurada — os e-mails não serão enviados. Cole a chave em <code>api/lib/email.js</code> (para testar) ou defina a variável <code>RESEND_API_KEY</code> na Vercel.</div>`;
+    }
+  }
   function renderStorage(mode) {
     const info = {
       redis: ['ok', 'Banco Redis conectado. Pedidos, comprovantes e visitantes ficam salvos de forma permanente.'],
@@ -1055,16 +1126,175 @@ td .sub { color: var(--muted); font-size: 12px; }
       if (currentView === 'overview') await loadStats();
       if (currentView === 'orders') await loadOrders();
       if (currentView === 'live') await loadLive();
+      if (currentView === 'rastreio') await loadRastreios();
       stamp();
     } catch (err) {
       if (err.message !== 'unauth') console.warn(err);
     }
   }
 
+  // ─── Rastreio ────────────────────────────────────────────────
+  const R_STATUS_BADGE = s => {
+    const n = (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    let c = 'b-blue';
+    if (n.includes('entregue')) c = 'b-paid';
+    else if (n.includes('saiu') || (n.includes('entrega') && !n.includes('entregue'))) c = 'b-pending';
+    else if (n.includes('pagamento')) c = 'b-violet';
+    return `<span class="badge ${c}">${esc(s)}</span>`;
+  };
+  let rFretes = [], rStatuses = [], rStatusFilled = false;
+  let rQTimer;
+  $('#r-q').oninput = () => { clearTimeout(rQTimer); rQTimer = setTimeout(loadRastreios, 300); };
+  $('#r-status').onchange = loadRastreios;
+  $('#r-new-btn').onclick = () => openRastreio(null);
+
+  async function loadRastreios() {
+    const qs = new URLSearchParams({ q: $('#r-q').value.trim(), status: $('#r-status').value });
+    const d = await api('/admin/rastreios?' + qs);
+    rFretes = d.fretes || []; rStatuses = d.statuses || [];
+    if (!rStatusFilled && rStatuses.length) {
+      $('#r-status').insertAdjacentHTML('beforeend', rStatuses.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join(''));
+      rStatusFilled = true;
+    }
+    const k = d.stats || { total: 0, transito: 0, saiu: 0, entregue: 0 };
+    const kpi = (icCls, icon, label, value) => `<div class="card kpi"><div class="label"><span class="ic ${icCls}">${icon}</span>${label}</div><div class="value num">${int(value)}</div></div>`;
+    $('#rastreio-kpis').innerHTML = [
+      kpi('ic-blue', ICON.truck, 'Total de envios', k.total),
+      kpi('ic-violet', ICON.truck, 'Em trânsito', k.transito),
+      kpi('ic-amber', ICON.truck, 'Saiu para entrega', k.saiu),
+      kpi('ic-green', ICON.check, 'Entregues', k.entregue),
+    ].join('');
+    $('#rastreio-body').innerHTML = d.rastreios.length ? d.rastreios.map(r => `
+      <tr data-rastreio="${esc(r.codigo)}">
+        <td><span class="name num">${esc(r.codigo)}</span></td>
+        <td>${esc(r.cliente)}${r.cpf ? `<div class="sub">${esc(r.cpf)}</div>` : ''}</td>
+        <td>${esc(r.produto)}${r.quantidade > 1 ? ` <span class="muted">×${r.quantidade}</span>` : ''}</td>
+        <td class="sub">${esc(r.cidadeOrigem || '—')}<br>→ ${esc(r.cidadeDestino || '—')}</td>
+        <td class="sub">${esc(r.frete || '—')}</td>
+        <td>${R_STATUS_BADGE(r.status)}${r.auto ? ' <span class="badge b-gray" title="Status automático pelo tempo" style="margin-left:4px">auto</span>' : ''}</td>
+        <td class="num">${r.criadoEm ? dt(r.criadoEm) : '—'}</td>
+      </tr>`).join('') : `<tr><td colspan="7" class="empty">Nenhum rastreio ainda. Clique em "Novo rastreio" para cadastrar.</td></tr>`;
+  }
+
+  document.addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-rastreio]');
+    if (tr) openRastreio(tr.dataset.rastreio);
+  });
+
+  async function openRastreio(codigo) {
+    openId = null;
+    $('#drawer').classList.add('open'); $('#overlay').classList.add('open');
+    $('#drawer').setAttribute('aria-hidden', 'false');
+    const novo = !codigo;
+    let r = { codigo: '', cliente: '', cpf: '', produto: 'Lavadora de Alta Pressão Tramontina 1200W', quantidade: 1, frete: rFretes[0] || 'SEDEX Express (3 a 6 dias úteis)', cidadeOrigem: 'São Paulo / SP', cidadeDestino: '', status: rStatuses[0] || 'Objeto Postado', eventos: [] };
+    $('#d-title').textContent = novo ? 'Novo rastreio' : 'Rastreio ' + codigo;
+    $('#d-sub').textContent = '';
+    if (!novo) {
+      $('#d-body').innerHTML = '<div class="muted">Carregando...</div>';
+      try { const list = await api('/admin/rastreios?q=' + encodeURIComponent(codigo)); r = list.rastreios.find(x => x.codigo === codigo) || r; }
+      catch (err) { $('#d-sub').textContent = err.message; return; }
+    }
+    renderRastreioForm(r, novo);
+  }
+
+  function renderRastreioForm(r, novo) {
+    const opts = (arr, sel) => arr.map(v => `<option value="${esc(v)}" ${v === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
+    $('#d-sub').innerHTML = novo ? 'Preencha os dados do envio' : R_STATUS_BADGE(r.status) + (r.criadoEm ? ` <span class="muted">· criado ${dt(r.criadoEm)}</span>` : '');
+    $('#d-body').innerHTML = `
+      <div class="card"><div class="card-b">
+        <div class="field"><label for="r-codigo">Código de rastreio</label>
+          <div class="copy-line">
+            <input class="input num" id="r-codigo" value="${esc(r.codigo)}" placeholder="Gerado automaticamente" ${novo ? '' : 'readonly'}>
+            ${novo ? `<button class="btn" type="button" id="r-gen">Gerar</button>` : `<button class="btn" type="button" id="r-copy">Copiar</button>`}
+          </div>
+          ${novo ? '<div class="field-note muted" style="font-size:12px;margin-top:4px">Deixe em branco para gerar no padrão BR…BZ.</div>' : ''}
+        </div>
+        <div class="setting" style="padding:12px 0" id="r-auto-row">
+          <div class="txt"><b>Atualizar status automaticamente</b><span class="muted">O rastreio avança sozinho com o tempo.</span></div>
+          <label class="switch"><input type="checkbox" id="r-auto" ${(novo ? true : r.auto) ? 'checked' : ''}><span></span></label>
+        </div>
+        <div class="field"><label for="r-cliente">Cliente *</label><input class="input" id="r-cliente" value="${esc(r.cliente)}" placeholder="Nome do destinatário"></div>
+        <div class="field"><label for="r-cpf">CPF</label><input class="input" id="r-cpf" value="${esc(r.cpf)}" placeholder="Opcional · o cliente pode rastrear pelo CPF"></div>
+        <div class="field"><label for="r-produto">Produto</label><input class="input" id="r-produto" value="${esc(r.produto)}"></div>
+        <div class="field"><label for="r-qtd">Quantidade</label><input class="input num" id="r-qtd" type="number" min="1" value="${esc(r.quantidade || 1)}"></div>
+        <div class="field"><label for="r-frete">Transportadora / Frete</label><select class="select" id="r-frete">${opts(rFretes, r.frete)}</select></div>
+        <div class="field" id="r-field-origem"><label for="r-origem">Cidade de origem</label><input class="input" id="r-origem" value="${esc(r.cidadeOrigem || 'São Paulo / SP')}" placeholder="São Paulo / SP"></div>
+        <div class="field"><label for="r-destino">Cidade de destino *</label><input class="input" id="r-destino" value="${esc(r.cidadeDestino)}" placeholder="Cidade / UF"></div>
+        <div class="field" id="r-field-status"><label for="r-status-sel">Status</label><select class="select" id="r-status-sel">${opts(rStatuses, r.status)}</select>
+          <div class="field-note muted" style="font-size:12px;margin-top:4px">Ao salvar, uma nova etapa é adicionada à linha do tempo do cliente.</div>
+        </div>
+        <div class="field-note muted" id="r-auto-note" style="font-size:12.5px;margin:-4px 0 8px;display:none">O status avança sozinho a partir de hoje. “Saiu para entrega” cai no prazo máximo do frete (dias úteis) e “Entregue” no dia útil seguinte. Envio de São Paulo.</div>
+        <div class="actions-row" style="margin-top:4px">
+          <button class="btn btn-green" id="r-save">${novo ? 'Cadastrar rastreio' : 'Salvar alterações'}</button>
+          ${novo ? '' : `<button class="btn btn-danger" id="r-del">Excluir</button>`}
+        </div>
+      </div></div>
+      ${(r.eventos && r.eventos.length) ? `<div class="card"><div class="card-h"><h3>Linha do tempo</h3><span class="muted">como o cliente vê</span></div><div class="card-b">
+        <ul class="timeline">${r.eventos.map(ev => `<li><b>${esc(ev.titulo)}</b><div>${esc(ev.descricao || '')}</div><div class="t">${esc(ev.data || '')}${ev.local ? ' · ' + esc(ev.local) : ''}</div></li>`).join('')}</ul>
+      </div></div>` : ''}`;
+
+    const g = $('#r-gen'); if (g) g.onclick = () => { $('#r-codigo').value = 'BR' + Math.floor(100000000 + Math.random() * 900000000) + 'BZ'; };
+    const cp = $('#r-copy'); if (cp) cp.onclick = () => navigator.clipboard.writeText(r.codigo).then(() => toast('Copiado', 'Código copiado.'));
+    const autoChk = $('#r-auto');
+    const applyAuto = () => {
+      const on = autoChk.checked;
+      $('#r-field-status').style.display = on ? 'none' : '';
+      $('#r-field-origem').style.display = on ? 'none' : '';
+      $('#r-auto-note').style.display = on ? 'block' : 'none';
+    };
+    autoChk.onchange = applyAuto; applyAuto();
+    $('#r-save').onclick = e => saveRastreio(e.currentTarget, r, novo);
+    const del = $('#r-del'); if (del) del.onclick = () => delRastreio(r.codigo);
+  }
+
+  async function saveRastreio(btn, r, novo) {
+    const auto = $('#r-auto').checked;
+    const body = {
+      cliente: $('#r-cliente').value.trim(), cpf: $('#r-cpf').value.trim(),
+      produto: $('#r-produto').value.trim(), quantidade: $('#r-qtd').value,
+      frete: $('#r-frete').value, cidadeOrigem: $('#r-origem').value.trim(),
+      cidadeDestino: $('#r-destino').value.trim(), status: $('#r-status-sel').value,
+      auto,
+    };
+    if (!body.cliente || !body.cidadeDestino) { toast('Faltam dados', 'Informe o cliente e a cidade de destino.', 'red'); return; }
+    btn.disabled = true;
+    try {
+      if (novo) {
+        body.codigo = $('#r-codigo').value.trim();
+        const created = await api('/admin/rastreios', { method: 'POST', body });
+        toast('Rastreio cadastrado', created.codigo + (auto ? ' · automático' : ''), 'green');
+      } else {
+        if (!auto) body.novoEvento = {}; // manual: gera uma etapa a partir do status
+        await api('/admin/rastreios/' + encodeURIComponent(r.codigo), { method: 'PUT', body });
+        toast('Rastreio atualizado', r.codigo, 'green');
+      }
+      closeDrawer();
+      loadRastreios();
+    } catch (err) {
+      if (err.message !== 'unauth') toast('Erro', err.message, 'red');
+    } finally { btn.disabled = false; }
+  }
+
+  async function delRastreio(codigo) {
+    if (!confirm('Excluir o rastreio ' + codigo + '? O cliente deixa de conseguir rastrear por este código.')) return;
+    try {
+      await api('/admin/rastreios/' + encodeURIComponent(codigo), { method: 'DELETE' });
+      toast('Rastreio excluído', codigo);
+      closeDrawer();
+      loadRastreios();
+    } catch (err) { if (err.message !== 'unauth') toast('Erro', err.message, 'red'); }
+  }
+
   async function boot() {
     const me = await api('/admin/me');
     renderStorage(me.storage);
     $('#webhook-url').value = me.webhookUrl || '';
+    renderEmailStatus(me);
+    api('/admin/config').then(cfg => {
+      $('#set-auto-rastreio').checked = cfg.autoRastreio !== false;
+      $('#set-email-cliente').checked = cfg.emailCliente !== false;
+      $('#set-email-pix').checked = cfg.emailPixGerado !== false;
+    }).catch(() => {});
     $('#login').classList.add('hidden');
     $('#app').classList.remove('hidden');
     applyTheme(document.documentElement.getAttribute('data-theme'));

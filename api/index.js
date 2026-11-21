@@ -5,6 +5,7 @@ const fetch   = require('node-fetch');
 const https   = require('https');
 const crypto  = require('crypto');
 const panel   = require('./lib/panel');
+const rastreio = require('./lib/rastreio');
 
 const app = express();
 app.use(cors());
@@ -12,26 +13,17 @@ app.use(express.json({ limit: '6mb' }));      // comprovantes chegam em base64
 app.use(express.text({ limit: '10kb' }));     // navigator.sendBeacon (saída do site)
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-// Use a variável VENO_API_KEY na Vercel. A chave abaixo já está pública no
-// repositório: gere uma nova na Veno, cadastre na Vercel e depois apague esta.
-const VENO_API_KEY  = process.env.VENO_API_KEY || 'veno_live_e5cb2d9a239405e05b1cf3440244c62785437adca507422a';
-const VENO_BASE_URL = 'https://beta.venopayments.com';
+// Chaves vêm de variáveis de ambiente (.env local / Vercel). Nada de segredo no código.
+const VENO_API_KEY  = process.env.VENO_API_KEY || '';
+const VENO_BASE_URL = process.env.VENO_BASE_URL || 'https://beta.venopayments.com';
 const httpsAgent    = new https.Agent({ rejectUnauthorized: false });
 
+// IDs dos pixels são públicos (ficam no navegador); só os tokens do CAPI são segredo.
 const META_PIXELS = [
-  {
-    id: '1448868326836788',
-    token: 'EAGYyaNTSuUEBTACb7nM970YrUtqZC0qZAt9wwMlRg1spEZCeaCGqmj1PdqnkjkoZBcoXnBgACZAODU0jZAuxu6jZBHzZB0S8GrbZBVThZAeRUxk3HeAhfpXq6aA7yelLCZAxT2PaTfZCwo2ZANxW9VniySlsy4UoEFCqmJv18HHlntDVVQTnFhJdZB4du3FqcQo4ZCAgHeoBgZDZD'
-  },
-  {
-    id: '29370137919281276',
-    token: 'EAAQOKCi5psUBTDQlZAZBHt9GZCkrUeIIWtq0SxkEvjrM1jKZCiiGAo4CMHRnBZBdVaTyPsaq8hV8JhR3aqH8FdEGVFpzjLs68fIoRofXVwG9DEBZC6KR84oRXu7C05rzzWKt2qPL1bXpZAOKq6eUgvXjg9XVwX7o2nRaJUuwYHAlpbVaSGk1dhpUlMqioUeA7ZBXlQZDZD'
-  },
-  {
-    id: '1715304620163972',
-    token: 'EAAgyZC8rARtcBTAsPrw6gk9Xa0fQFCzUtplPNHt8nMKaLX2ewB8D8ff1fPacRVLshHIfNwRzo6PbwV3txEsdubOOiqBDdvpkW9iE3MCcs4ibonAWYTvLmZBDXwXEd5kZA5DH9lTivrOco1R0sZCiAUOZB1PYLq5eT0xjnA1cSJV1dcZCNol2Hq9hmBNklmNhJCPAZDZD'
-  }
-];
+  { id: '1448868326836788',  token: process.env.META_CAPI_TOKEN_1 || '' },
+  { id: '29370137919281276', token: process.env.META_CAPI_TOKEN_2 || '' },
+  { id: '1715304620163972',  token: process.env.META_CAPI_TOKEN_3 || '' },
+].filter(p => p.token); // sem token configurado → não envia para aquele pixel
 
 // Cache de status pagos (em memória)
 const paidPixStore = new Set();
@@ -99,13 +91,14 @@ app.get(['/', '/api'], (req, res) => {
 
 // ─── Painel admin, pedidos e rastreamento de visitantes ───────────────────────
 panel.register(app);
+rastreio.register(app, panel.requireAdmin);
 
 // ─── POST /api/pix/criar ──────────────────────────────────────────────────────
 app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
   try {
     const { nome, email, cpf, telefone, cep, total, orderBump, orderId, fbc, fbp,
             utm_source, utm_campaign, utm_medium, utm_content, utm_term, src, sck,
-            address, variant, quantity, shipping, vid } = req.body || {};
+            address, variant, quantity, shipping, vid, ic_event_id } = req.body || {};
 
     if (!nome || !email || !cpf || !telefone || !total) {
       return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
@@ -115,7 +108,8 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
     const amountCents  = Math.round(cleanTotal * 100);
     const clientIp     = req.headers['x-forwarded-for']?.split(',')[0] || req.ip || '';
     const clientUa     = req.headers['user-agent'] || '';
-    const eventId      = `initiate-${orderId || Date.now()}`;
+    // Usa o mesmo event_id gerado ao entrar no checkout (dedupe com o Pixel do navegador)
+    const eventId      = ic_event_id || `initiate-${orderId || Date.now()}`;
 
     // ── Dispara InitiateCheckout no CAPI ──
     sendMetaEvent({
@@ -133,7 +127,7 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
     });
 
     const products = [
-      { external_ref: 'lavadora-tramontina-1200w', name: 'Lavadora Alta Pressão Tramontina 1200W', price: 6988, quantity: 1 },
+      { external_ref: 'lavadora-tramontina-1200w', name: 'Lavadora Alta Pressão Tramontina 1200W', price: 8997, quantity: 1 },
     ];
     if (orderBump) {
       products.push({ external_ref: 'garantia-vip-12m', name: 'Garantia Estendida VIP 12 meses', price: 1490, quantity: 1 });
@@ -189,7 +183,7 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
 
     // ── Registra o pedido para o painel /admin ──
     try {
-      await panel.createOrder({
+      const novoPedido = await panel.createOrder({
         orderId: orderId || data.external_id || data.id,
         pixId: data.id, txid: data.txid, expiresAt: data.expires_at,
         total: cleanTotal, nome, email, cpf, telefone,
@@ -198,6 +192,8 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
         variant, quantity, shipping, orderBump, vid, fbc, fbp,
         utm: { utm_source, utm_campaign, utm_medium, utm_content, utm_term, src, sck },
       });
+      // E-mail "falta só o pagamento" com o código PIX (se ligado em Configurações)
+      await panel.notificarPixGeradoPorEmail(novoPedido, data.pix_copy_paste || '');
     } catch (e) {
       console.error('[Painel] Falha ao salvar pedido:', e.message);
     }

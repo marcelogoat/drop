@@ -102,6 +102,17 @@ const store = {
     delete mem.kv[key]; delete mem.exp[key]; persist();
   },
 
+  // Acesso a uma chave CRUA, sem o prefixo bazari: — usado para a chave
+  // "rastreios_db", compartilhada com o site de rastreio (mesmo Redis).
+  async getRawJSON(key) {
+    if (USE_REDIS) { const v = await redis(['GET', key]); return v ? JSON.parse(v) : null; }
+    return store.getJSON(key);
+  },
+  async setRawJSON(key, value) {
+    if (USE_REDIS) return redis(['SET', key, JSON.stringify(value)]);
+    return store.setJSON(key, value);
+  },
+
   // Sorted set (índice de pedidos por data)
   async zadd(key, score, member) {
     if (USE_REDIS) return redis(['ZADD', P(key), score, member]);

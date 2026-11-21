@@ -536,7 +536,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
             <div style="font-size: 12.5px; color: #64748B;" id="variant-display">Voltagem: 127V · 1500 PSI</div>
           </div>
         </div>
-        <div style="font-weight: 700; color: #0F172A;">R$ 69,88</div>
+        <div style="font-weight: 700; color: #0F172A;">R$ 89,97</div>
       </div>
 
       <div id="bumps-container"></div>
@@ -555,12 +555,12 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
 
       <div class="total-row">
         <span class="total-label">Total Pago:</span>
-        <span class="total-value" id="order-total-display">R$ 88,85</span>
+        <span class="total-value" id="order-total-display">R$ 108,94</span>
       </div>
 
       <!-- ACTIONS -->
       <div class="actions-group" style="margin-top: 24px;">
-        <a id="btn-track-order" href="https://bazari-rastreio.vercel.app/" class="btn-track" target="_blank" rel="noopener noreferrer">
+        <a id="btn-track-order" href="rastreio.html" class="btn-track">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="20" height="20"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
           Acompanhar Envio do Pedido
         </a>
@@ -582,7 +582,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
     // Recuperar parâmetros da URL
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('pedido') || Math.floor(100000000 + Math.random() * 900000000);
-    const total = params.get('total') || '88,85';
+    const total = params.get('total') || '108,94';
     const nome = params.get('nome') || '';
     const variant = params.get('v') || '127V';
     const bumps = params.get('bumps') || '';
@@ -597,7 +597,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
       const v = params.get(k) || sessionStorage.getItem(k) || localStorage.getItem(k);
       if (v) trackParams.set(k, v);
     });
-    document.getElementById('btn-track-order').href = `rastreio.html?` + trackParams.toString();
+    document.getElementById("btn-track-order").href = `rastreio.html?codigo=BR${orderId}BZ`;
 
     if (nome) {
       const primeiroNome = nome.trim().split(' ')[0];
@@ -624,11 +624,27 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
       });
     }
 
-    // Meta Pixel: Disparo Purchase ÚNICO por pedido (com proteção contra F5)
-    const trackedStorageKey = `tracked_purchase_${orderId}`;
-    if (!sessionStorage.getItem(trackedStorageKey)) {
-      sessionStorage.setItem(trackedStorageKey, '1');
-      const cleanValue = parseFloat(String(total).replace(',', '.')) || 69.88;
+    // Meta Pixel: Purchase SÓ quando o servidor confirma o pagamento.
+    // Antes, o evento disparava só por abrir esta página — o que marcava "venda"
+    // na Meta em testes, no botão voltar ou em acesso direto, sem pagamento real.
+    // Agora consulta o status do PIX no servidor e usa o MESMO event_id do CAPI
+    // (purchase-<id do PIX>) para a Meta deduplicar e nunca contar em dobro.
+    (async function dispararPurchaseSePago() {
+      const pixId = params.get('pix_id') || '';
+      const chave = `tracked_purchase_${pixId || orderId}`;
+      if (sessionStorage.getItem(chave)) return;
+      if (!pixId) { console.warn('[Meta Pixel] Sem pix_id — Purchase não disparado.'); return; }
+
+      let pago = false;
+      try {
+        const r = await fetch(`/api/pix/${encodeURIComponent(pixId)}/status`);
+        if (r.ok) { const s = await r.json(); pago = s && s.status === 'paid'; }
+      } catch (e) {}
+
+      if (!pago) { console.warn('[Meta Pixel] Pagamento não confirmado — Purchase não disparado.'); return; }
+
+      sessionStorage.setItem(chave, '1');
+      const cleanValue = parseFloat(String(total).replace(',', '.')) || 89.97;
       if (typeof fbq !== 'undefined') {
         fbq('track', 'Purchase', {
           value: cleanValue,
@@ -637,13 +653,10 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           content_type: 'product',
           num_items: 1,
           order_id: String(orderId)
-        }, { eventID: 'purchase-' + orderId });
-        console.log('[Meta Pixel] ✅ Evento Purchase contabilizado na tela de obrigado!', {
-          value: cleanValue,
-          order_id: orderId
-        });
+        }, { eventID: 'purchase-' + pixId });
+        console.log('[Meta Pixel] ✅ Purchase (pagamento confirmado pela Veno):', pixId);
       }
-    }
+    })();
   </script>
 
 <script src="track.js" data-section="obrigado" defer></script>
