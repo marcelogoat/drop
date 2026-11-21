@@ -18,12 +18,13 @@ const VENO_API_KEY  = process.env.VENO_API_KEY || '';
 const VENO_BASE_URL = process.env.VENO_BASE_URL || 'https://beta.venopayments.com';
 const httpsAgent    = new https.Agent({ rejectUnauthorized: false });
 
-// IDs dos pixels são públicos (ficam no navegador); só os tokens do CAPI são segredo.
+// Tokens do CAPI da Meta. Ficam no código (a pedido), mas uma variável de ambiente
+// META_CAPI_TOKEN_1/2/3 sobrescreve, caso você queira trocar sem mexer no código.
 const META_PIXELS = [
-  { id: '1448868326836788',  token: process.env.META_CAPI_TOKEN_1 || '' },
-  { id: '29370137919281276', token: process.env.META_CAPI_TOKEN_2 || '' },
-  { id: '1715304620163972',  token: process.env.META_CAPI_TOKEN_3 || '' },
-].filter(p => p.token); // sem token configurado → não envia para aquele pixel
+  { id: '1448868326836788',  token: process.env.META_CAPI_TOKEN_1 || 'EAGYyaNTSuUEBTACb7nM970YrUtqZC0qZAt9wwMlRg1spEZCeaCGqmj1PdqnkjkoZBcoXnBgACZAODU0jZAuxu6jZBHzZB0S8GrbZBVThZAeRUxk3HeAhfpXq6aA7yelLCZAxT2PaTfZCwo2ZANxW9VniySlsy4UoEFCqmJv18HHlntDVVQTnFhJdZB4du3FqcQo4ZCAgHeoBgZDZD' },
+  { id: '29370137919281276', token: process.env.META_CAPI_TOKEN_2 || 'EAAQOKCi5psUBTDQlZAZBHt9GZCkrUeIIWtq0SxkEvjrM1jKZCiiGAo4CMHRnBZBdVaTyPsaq8hV8JhR3aqH8FdEGVFpzjLs68fIoRofXVwG9DEBZC6KR84oRXu7C05rzzWKt2qPL1bXpZAOKq6eUgvXjg9XVwX7o2nRaJUuwYHAlpbVaSGk1dhpUlMqioUeA7ZBXlQZDZD' },
+  { id: '1715304620163972',  token: process.env.META_CAPI_TOKEN_3 || 'EAAgyZC8rARtcBTAsPrw6gk9Xa0fQFCzUtplPNHt8nMKaLX2ewB8D8ff1fPacRVLshHIfNwRzo6PbwV3txEsdubOOiqBDdvpkW9iE3MCcs4ibonAWYTvLmZBDXwXEd5kZA5DH9lTivrOco1R0sZCiAUOZB1PYLq5eT0xjnA1cSJV1dcZCNol2Hq9hmBNklmNhJCPAZDZD' },
+].filter(p => p.token);
 
 // Cache de status pagos (em memória)
 const paidPixStore = new Set();
