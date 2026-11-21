@@ -946,7 +946,7 @@ function onPaymentConfirmed(s) {
   }, 1200);
 }
 
-// ── Polling inteligente de status (a cada 3s) ──────────────────────────────
+// ── Polling inteligente de status (a cada 5s; o webhook confirma na hora) ──────────────────────────────
 let pollInterval = null;
 if (pixId) {
   pollInterval = setInterval(async () => {
@@ -968,7 +968,7 @@ if (pixId) {
     } catch(err) {
       console.warn('[Polling] Erro ao verificar status:', err);
     }
-  }, 3000);
+  }, 5000);
 }
 
 // Timer decrescente de 15 minutos
@@ -989,6 +989,7 @@ setInterval(() => {
 // Copiar código PIX
 function copyPixCode() {
   const code = document.getElementById('pix-string').value;
+  notifyCopied();
   navigator.clipboard.writeText(code).then(() => {
     const btn = document.getElementById('btn-copy');
     const label = document.getElementById('btn-copy-label');
@@ -1001,28 +1002,101 @@ function copyPixCode() {
   });
 }
 
+// Avisa o painel que o cliente copiou o código PIX
+function notifyCopied() {
+  if (!pixId) return;
+  fetch(`/api/orders/${encodeURIComponent(orderId)}/copied`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pixId }),
+    keepalive: true,
+  }).catch(() => {});
+}
+// Quem seleciona o código e copia na mão (Ctrl+C / segurar) também conta
+document.getElementById('pix-string').addEventListener('copy', notifyCopied);
+
 // Upload de comprovante
+let receiptFile = null;
+
 function handleFileSelect(e) {
   const file = e.target.files[0];
-  if (file) {
-    document.getElementById('file-label').innerHTML = `✓ ${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
-    const btn = document.getElementById('send-receipt-btn');
-    btn.classList.add('enabled');
-    btn.textContent = 'Enviar comprovante agora';
+  if (!file) return;
+  const okType = file.type.startsWith('image/') || file.type === 'application/pdf';
+  if (!okType) { alert('Envie uma imagem (JPG, PNG, WEBP) ou PDF.'); return; }
+  if (file.size > 5 * 1024 * 1024) { alert('Arquivo acima de 5 MB. Envie um print ou PDF menor.'); return; }
+  receiptFile = file;
+  document.getElementById('file-label').innerHTML = `✓ ${file.name.replace(/[<>&"]/g, '')} (${(file.size / 1024).toFixed(0)} KB)`;
+  const btn = document.getElementById('send-receipt-btn');
+  btn.classList.add('enabled');
+  btn.disabled = false;
+  btn.style.background = '';
+  btn.textContent = 'Enviar comprovante agora';
+}
+
+function readAsDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+// Prints de celular costumam ter vários MB: reduz para no máx. 1600px em JPEG.
+async function compressImage(file) {
+  if (file.type === 'image/gif') return file;
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = reject;
+      i.src = url;
+    });
+    const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.82));
+    return blob && blob.size < file.size ? new File([blob], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file;
+  } catch (e) {
+    return file;
+  } finally {
+    URL.revokeObjectURL(url);
   }
 }
 
-function sendReceipt() {
+async function sendReceipt() {
   const btn = document.getElementById('send-receipt-btn');
-  if (btn.classList.contains('enabled')) {
-    btn.textContent = 'Enviando...';
-    setTimeout(() => {
-      btn.textContent = '✓ Comprovante recebido com sucesso!';
-      btn.style.background = '#059669';
-    }, 1200);
+  if (!btn.classList.contains('enabled') || !receiptFile || btn.disabled) return;
+  if (!pixId) { alert('Não encontramos o PIX deste pedido. Volte e gere novamente.'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const file = receiptFile.type.startsWith('image/') ? await compressImage(receiptFile) : receiptFile;
+    const dataUrl = await readAsDataURL(file);
+    const r = await fetch(`/api/orders/${encodeURIComponent(orderId)}/receipt`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pixId, name: file.name, type: file.type, data: dataUrl.split(',')[1] }),
+    });
+    const res = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(res.error || 'Falha no envio');
+    btn.textContent = '✓ Comprovante recebido com sucesso!';
+    btn.style.background = '#059669';
+    btn.classList.remove('enabled');
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Tentar enviar novamente';
+    alert('Não foi possível enviar o comprovante: ' + err.message);
   }
 }
 </script>
 
+<script src="track.js" data-section="pix" defer></script>
 </body>
 </html>

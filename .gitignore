@@ -4,3 +4,5 @@ node_modules/
 *.py
 .DS_Store
 .env
+data/
+.claude/
