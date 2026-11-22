@@ -481,6 +481,33 @@ input, select { font-family: inherit; }
   color: #008276;
 }
 
+/* Opção de cartão indisponível nesta oferta */
+.payment-tab.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+  background: #FAFAFA;
+  border-style: dashed;
+}
+.payment-tab.disabled .payment-left { opacity: 0.55; filter: grayscale(1); }
+.payment-badge.indisponivel {
+  background: #FEF2F2;
+  color: #B42318;
+}
+.payment-note-card {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: -6px 0 2px;
+  padding: 10px 12px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 10px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #92400E;
+}
+.payment-note-card svg { flex: 0 0 16px; width: 16px; height: 16px; margin-top: 1px; }
+
 .payment-content {
   margin-bottom: 20px;
 }
@@ -1372,6 +1399,22 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           </div>
           <span class="payment-badge pix">Aprovação imediata</span>
         </div>
+
+        <div class="payment-tab disabled" id="tab-cartao" aria-disabled="true" title="Cartão indisponível nesta oferta">
+          <div class="payment-left">
+            <div class="shipping-radio"></div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" width="22" height="22"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              <strong>Cartão de crédito</strong>
+            </div>
+          </div>
+          <span class="payment-badge indisponivel">Indisponível</span>
+        </div>
+      </div>
+
+      <div class="payment-note-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
+        <span>Por ser uma <strong>oferta promocional com desconto especial</strong>, o pagamento com cartão de crédito está temporariamente indisponível. Para garantir esse preço, finalize via <strong>Pix</strong> — a aprovação é imediata e o pedido é separado na hora.</span>
       </div>
 
       <div class="pay-total">
