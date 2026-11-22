@@ -28,20 +28,25 @@ const STATUSES = [
   'Entregue',
 ];
 
-// ─── Datas e linha do tempo (copiado do site de rastreio) ─────────────────────
-function formatDataRelativa(horasAtras) {
-  const d = new Date(Date.now() - horasAtras * 3600000);
-  const hoje = new Date();
-  const diaD = d.getDate();
-  const mesD = String(d.getMonth() + 1).padStart(2, '0');
-  const anoD = d.getFullYear();
-  const horaStr = String(d.getHours()).padStart(2, '0');
-  const minStr = String(d.getMinutes()).padStart(2, '0');
-  const diffDias = Math.floor((hoje.setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / 86400000);
-  if (diffDias === 0) return `Hoje às ${horaStr}:${minStr}`;
-  if (diffDias === 1) return `Ontem às ${horaStr}:${minStr}`;
-  return `${String(diaD).padStart(2, '0')}/${mesD}/${anoD} às ${horaStr}:${minStr}`;
+// ─── Datas no horário de Brasília ─────────────────────────────────────────────
+// O servidor pode rodar em UTC (ex.: Vercel). O Brasil não tem mais horário de
+// verão, então usamos UTC-3 fixo. Trabalhamos com timestamps (ms).
+const BR_MIN = 180; // 3h
+const brRead = ms => new Date(ms - BR_MIN * 60000);                              // ler com getUTC* = relógio de Brasília
+const brMake = (y, mo, d, h, mi) => Date.UTC(y, mo, d, h, mi) + BR_MIN * 60000;  // instante a partir do relógio de Brasília
+
+function rotuloData(ms, nowMs) {
+  const b = brRead(ms), nb = brRead(nowMs);
+  const d0 = Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate());
+  const dN = Date.UTC(nb.getUTCFullYear(), nb.getUTCMonth(), nb.getUTCDate());
+  const diff = Math.round((dN - d0) / 86400000);
+  const hh = String(b.getUTCHours()).padStart(2, '0');
+  const mm = String(b.getUTCMinutes()).padStart(2, '0');
+  if (diff === 0) return `Hoje às ${hh}:${mm}`;
+  if (diff === 1) return `Ontem às ${hh}:${mm}`;
+  return `${String(b.getUTCDate()).padStart(2, '0')}/${String(b.getUTCMonth() + 1).padStart(2, '0')}/${b.getUTCFullYear()} às ${hh}:${mm}`;
 }
+function formatDataRelativa(horasAtras) { return rotuloData(Date.now() - horasAtras * 3600000, Date.now()); }
 const formatNowBR = () => formatDataRelativa(0);
 
 function gerarEventosIniciais(status, origem, destino, frete) {
@@ -109,42 +114,28 @@ function maxDiasFrete(frete) {
   if (/gr[aá]tis/i.test(s)) return 12;
   return 6;
 }
-const ehDiaUtil = d => { const w = d.getDay(); return w >= 1 && w <= 5; };
-function addDiasUteis(base, n) {
-  const d = new Date(base);
-  let add = 0;
-  while (add < n) { d.setDate(d.getDate() + 1); if (ehDiaUtil(d)) add++; }
-  return d;
-}
-function emDiaUtil(d) { const x = new Date(d); while (!ehDiaUtil(x)) x.setDate(x.getDate() + 1); return x; }
-function comHora(d, h, m) { const x = new Date(d); x.setHours(h, m || 0, 0, 0); return x; }
-function rotuloData(d, now) {
-  const base = new Date(now); base.setHours(0, 0, 0, 0);
-  const dia = new Date(d); dia.setHours(0, 0, 0, 0);
-  const diff = Math.round((base - dia) / 86400000);
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  if (diff === 0) return `Hoje às ${hh}:${mm}`;
-  if (diff === 1) return `Ontem às ${hh}:${mm}`;
-  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} às ${hh}:${mm}`;
-}
+// Helpers de dias úteis no horário de Brasília (trabalham com timestamps em ms).
+const ehDiaUtil = ms => { const w = brRead(ms).getUTCDay(); return w >= 1 && w <= 5; };
+function addDiasUteis(ms, n) { let t = ms, add = 0; while (add < n) { t += 86400000; if (ehDiaUtil(t)) add++; } return t; }
+function emDiaUtil(ms) { let t = ms; while (!ehDiaUtil(t)) t += 86400000; return t; }
+function comHora(ms, h, m) { const b = brRead(ms); return brMake(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate(), h, m || 0); }
 
 function agendaAuto(r) {
   const orig = ORIGEM_PADRAO;
   const dest = r.cidadeDestino || 'Destino';
   const frete = r.frete || 'SEDEX Express';
   const max = Math.max(2, maxDiasFrete(frete));
-  const t0 = new Date(r.criadoEm || Date.now());
-  const dia = f => comHora(addDiasUteis(t0, Math.round(f * max)), 0, 0);
+  const t0 = new Date(r.criadoEm || Date.now()).getTime();
+  const diaBase = f => addDiasUteis(t0, Math.round(f * max));
   const saiu = comHora(emDiaUtil(addDiasUteis(t0, max)), 9, 30);
   const entregue = comHora(addDiasUteis(saiu, 1), 15, 10);
   return [
-    { date: new Date(t0.getTime() + 5 * 60000), status: 'Pagamento Confirmado', titulo: 'Pagamento confirmado e pedido aprovado', descricao: `Pagamento confirmado e etiqueta de envio ${frete} gerada para despacho`, local: `Centro de Logística e Distribuição (${orig})`, tipo: 'faturado' },
-    { date: new Date(t0.getTime() + 40 * 60000), status: 'Objeto Postado', titulo: 'Objeto postado', descricao: `Objeto postado no Centro Operacional ${frete}`, local: `Agência dos Correios (${orig})`, tipo: 'postado' },
-    { date: comHora(dia(0.2), 20, 10), status: 'Em Trânsito', titulo: 'Objeto recebido na Unidade de Tratamento', descricao: 'Objeto conferido e integrado para triagem e despacho interestadual', local: `Centro de Logística e Tratamento (${orig})`, tipo: 'recebido' },
-    { date: comHora(dia(0.4), 8, 0), status: 'Em Trânsito', titulo: 'Objeto em trânsito - por favor aguarde', descricao: `De Centro de Logística e Tratamento em ${orig} para Unidade de Tratamento em ${dest}`, local: `Centro de Logística em ${orig}`, tipo: 'transito' },
-    { date: comHora(dia(0.65), 12, 30), status: 'Em Trânsito', titulo: 'Objeto recebido pelos Correios do Brasil', descricao: 'Objeto recebido na Unidade de Tratamento e Logística Regional para encaminhamento local', local: `Unidade de Tratamento em ${dest}`, tipo: 'recebido' },
-    { date: comHora(dia(0.85), 9, 0), status: 'Na Unidade de Distribuição', titulo: 'Objeto em trânsito - por favor aguarde', descricao: `De Unidade de Tratamento em ${dest} para Unidade de Distribuição Local (CDD)`, local: `Unidade de Tratamento em ${dest}`, tipo: 'transito' },
+    { date: t0 + 5 * 60000, status: 'Pagamento Confirmado', titulo: 'Pagamento confirmado e pedido aprovado', descricao: `Pagamento confirmado e etiqueta de envio ${frete} gerada para despacho`, local: `Centro de Logística e Distribuição (${orig})`, tipo: 'faturado' },
+    { date: t0 + 40 * 60000, status: 'Objeto Postado', titulo: 'Objeto postado', descricao: `Objeto postado no Centro Operacional ${frete}`, local: `Agência dos Correios (${orig})`, tipo: 'postado' },
+    { date: comHora(diaBase(0.2), 20, 10), status: 'Em Trânsito', titulo: 'Objeto recebido na Unidade de Tratamento', descricao: 'Objeto conferido e integrado para triagem e despacho interestadual', local: `Centro de Logística e Tratamento (${orig})`, tipo: 'recebido' },
+    { date: comHora(diaBase(0.4), 8, 0), status: 'Em Trânsito', titulo: 'Objeto em trânsito - por favor aguarde', descricao: `De Centro de Logística e Tratamento em ${orig} para Unidade de Tratamento em ${dest}`, local: `Centro de Logística em ${orig}`, tipo: 'transito' },
+    { date: comHora(diaBase(0.65), 12, 30), status: 'Em Trânsito', titulo: 'Objeto recebido pelos Correios do Brasil', descricao: 'Objeto recebido na Unidade de Tratamento e Logística Regional para encaminhamento local', local: `Unidade de Tratamento em ${dest}`, tipo: 'recebido' },
+    { date: comHora(diaBase(0.85), 9, 0), status: 'Na Unidade de Distribuição', titulo: 'Objeto em trânsito - por favor aguarde', descricao: `De Unidade de Tratamento em ${dest} para Unidade de Distribuição Local (CDD)`, local: `Unidade de Tratamento em ${dest}`, tipo: 'transito' },
     { date: saiu, status: 'Saiu para Entrega', titulo: 'Objeto saiu para entrega ao destinatário', descricao: `Carteiro/Entregador em rota para entrega no endereço do destinatário em ${dest}`, local: `Unidade de Distribuição (${dest})`, tipo: 'entrega' },
     { date: entregue, status: 'Entregue', titulo: 'Objeto entregue ao destinatário', descricao: 'Objeto entregue com sucesso para o destinatário', local: dest, tipo: 'entregue' },
   ];
@@ -153,7 +144,7 @@ function agendaAuto(r) {
 // Calcula o estado ATUAL de um rastreio automático (status + linha do tempo até agora)
 function computarAuto(r, now = Date.now()) {
   const agenda = agendaAuto(r);
-  const ocorridos = agenda.filter(e => e.date.getTime() <= now);
+  const ocorridos = agenda.filter(e => e.date <= now);
   const visiveis = ocorridos.length ? ocorridos : [agenda[0]];
   const atual = visiveis[visiveis.length - 1];
   const eventos = visiveis.slice().reverse().map(e => ({
