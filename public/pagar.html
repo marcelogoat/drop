@@ -940,29 +940,51 @@ function onPaymentConfirmed(s) {
   }, 1200);
 }
 
-// ── Polling inteligente de status (a cada 5s; o webhook confirma na hora) ──────────────────────────────
+// ── Polling inteligente de status (imediato + a cada 5s; o webhook confirma na hora) ──
 let pollInterval = null;
-if (pixId) {
-  pollInterval = setInterval(async () => {
-    try {
-      const r = await fetch(`/api/pix/${pixId}/status`);
-      if (!r.ok) return;
-      const s = await r.json();
+async function verificarStatus() {
+  try {
+    const r = await fetch(`/api/pix/${pixId}/status`);
+    if (!r.ok) return;
+    const s = await r.json();
 
-      // 1. Atualiza QR/Copia-e-Cola assim que gerado pelo gateway
-      if (s.pix_copy_paste && (!pixStringEl.value || pixStringEl.value.includes('Carregando'))) {
-        setQR(s.pix_copy_paste);
-      }
-
-      // 2. Pagamento Confirmado! Dispara Purchase e exibe confirmação
-      if (s.status === 'paid') {
-        clearInterval(pollInterval);
-        onPaymentConfirmed(s);
-      }
-    } catch(err) {
-      console.warn('[Polling] Erro ao verificar status:', err);
+    // 1. Atualiza QR/Copia-e-Cola assim que gerado pelo gateway
+    if (s.pix_copy_paste && (!pixStringEl.value || pixStringEl.value.includes('Carregando'))) {
+      setQR(s.pix_copy_paste);
     }
-  }, 5000);
+
+    // 2. Pagamento Confirmado! Dispara Purchase e exibe confirmação
+    if (s.status === 'paid') {
+      clearInterval(pollInterval);
+      onPaymentConfirmed(s);
+    }
+  } catch(err) {
+    console.warn('[Polling] Erro ao verificar status:', err);
+  }
+}
+if (pixId) {
+  // Se o código não veio na URL, tenta recuperar na hora (não espera 5s)
+  if (!pixCode) verificarStatus();
+  pollInterval = setInterval(verificarStatus, 5000);
+
+  // Rede de segurança: se depois de 16s o código ainda não apareceu, oferece
+  // gerar novamente em vez de deixar o cliente preso em "Carregando...".
+  if (!pixCode) {
+    setTimeout(() => {
+      if (pixStringEl.value && pixStringEl.value.includes('Carregando')) {
+        pixStringEl.value = 'Não foi possível carregar o código PIX.';
+        const box = document.querySelector('.copy-box') || pixStringEl.parentElement;
+        if (box && !document.getElementById('pix-retry')) {
+          const a = document.createElement('a');
+          a.id = 'pix-retry';
+          a.href = 'checkout.html' + window.location.search;
+          a.textContent = '↻ Gerar novo código PIX';
+          a.style.cssText = 'display:block;margin-top:12px;text-align:center;font-weight:700;color:#0A734D;text-decoration:underline;font-size:14px;';
+          box.appendChild(a);
+        }
+      }
+    }, 16000);
+  }
 }
 
 // Timer decrescente de 15 minutos

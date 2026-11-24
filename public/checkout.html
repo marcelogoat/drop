@@ -1977,45 +1977,68 @@ async function processCheckout() {
       </span>`;
     }
 
-    console.log('[Checkout] Enviando dados para /api/pix/criar...');
-    const resp = await fetch('/api/pix/criar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        nome:      fullname,
-        email:     email,
-        cpf:       cpf,
-        telefone:  phone,
-        cep:       cep,
-        total:     total,
-        orderBump: bumpWarranty,
-        orderId:   orderId,
-        fbc:       getCookie('_fbc') || '',
-        fbp:       getCookie('_fbp') || '',
-        ic_event_id: (function(){ try { return sessionStorage.getItem('ic_event_id') || ''; } catch(e){ return ''; } })(),
-        // UTMs da URL ou Storage para rastreamento Veno
-        utm_source:   (new URLSearchParams(window.location.search)).get('utm_source')   || sessionStorage.getItem('utm_source')   || localStorage.getItem('utm_source')   || '',
-        utm_campaign: (new URLSearchParams(window.location.search)).get('utm_campaign') || sessionStorage.getItem('utm_campaign') || localStorage.getItem('utm_campaign') || '',
-        utm_medium:   (new URLSearchParams(window.location.search)).get('utm_medium')   || sessionStorage.getItem('utm_medium')   || localStorage.getItem('utm_medium')   || '',
-        utm_content:  (new URLSearchParams(window.location.search)).get('utm_content')  || sessionStorage.getItem('utm_content')  || localStorage.getItem('utm_content')  || '',
-        utm_term:     (new URLSearchParams(window.location.search)).get('utm_term')     || sessionStorage.getItem('utm_term')     || localStorage.getItem('utm_term')     || '',
-        src:          (new URLSearchParams(window.location.search)).get('src')          || sessionStorage.getItem('src')          || localStorage.getItem('src')          || '',
-        sck:          (new URLSearchParams(window.location.search)).get('sck')          || sessionStorage.getItem('sck')          || localStorage.getItem('sck')          || '',
-        // Dados extras para o painel /admin
-        address:  { state: state, city: city, neighborhood: neighborhood, street: street, number: number,
-                    complement: ((document.getElementById('complement') || {}).value || '').trim() },
-        variant:  variant,
-        quantity: quantity,
-        shipping: shippingType,
-        vid:      (window.bzTrack && window.bzTrack.vid) || '',
-      }),
-    });
+    const q = (k) => (new URLSearchParams(window.location.search)).get(k) || sessionStorage.getItem(k) || localStorage.getItem(k) || '';
+    const pixPayload = {
+      nome:      fullname,
+      email:     email,
+      cpf:       cpf,
+      telefone:  phone,
+      cep:       cep,
+      total:     total,
+      orderBump: bumpWarranty,
+      orderId:   orderId,
+      fbc:       getCookie('_fbc') || '',
+      fbp:       getCookie('_fbp') || '',
+      ic_event_id: (function(){ try { return sessionStorage.getItem('ic_event_id') || ''; } catch(e){ return ''; } })(),
+      // UTMs da URL ou Storage para rastreamento Veno
+      utm_source: q('utm_source'), utm_campaign: q('utm_campaign'), utm_medium: q('utm_medium'),
+      utm_content: q('utm_content'), utm_term: q('utm_term'), src: q('src'), sck: q('sck'),
+      // Dados extras para o painel /admin
+      address:  { state: state, city: city, neighborhood: neighborhood, street: street, number: number,
+                  complement: ((document.getElementById('complement') || {}).value || '').trim() },
+      variant:  variant,
+      quantity: quantity,
+      shipping: shippingType,
+      vid:      (window.bzTrack && window.bzTrack.vid) || '',
+    };
 
-    const pix = await resp.json();
+    async function gerarPix() {
+      const r = await fetch('/api/pix/criar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pixPayload),
+      });
+      const j = await r.json().catch(() => ({}));
+      return { ok: r.ok, pix: j };
+    }
+
+    console.log('[Checkout] Enviando dados para /api/pix/criar...');
+    let { ok, pix } = await gerarPix();
     console.log('[Checkout] Resposta PIX:', pix);
 
-    if (!resp.ok) {
+    if (!ok) {
       alert('Erro ao gerar PIX: ' + (pix.error || pix.message || 'Tente novamente.'));
+      if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.innerHTML = originalBtnHtml;
+      }
+      return;
+    }
+
+    // Às vezes a 1ª resposta vem sem o código copia-e-cola. Tenta mais uma vez
+    // antes de seguir, para o cliente nunca cair numa tela de PIX sem código.
+    if (ok && pix && pix.id && !pix.pix_copy_paste) {
+      console.warn('[Checkout] PIX sem código na 1ª resposta — tentando novamente...');
+      try {
+        const retry = await gerarPix();
+        if (retry.ok && retry.pix && retry.pix.pix_copy_paste) pix = retry.pix;
+      } catch (e) { console.warn('[Checkout] Retry falhou:', e); }
+    }
+
+    if (!pix || !pix.pix_copy_paste) {
+      alert('Não foi possível gerar o código PIX agora. Por favor, toque em FINALIZAR COMPRA novamente.');
       if (btn) {
         btn.disabled = false;
         btn.style.opacity = '1';

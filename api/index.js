@@ -94,6 +94,29 @@ app.get(['/', '/api'], (req, res) => {
 panel.register(app);
 rastreio.register(app, panel.requireAdmin);
 
+// A Veno (e gateways em geral) às vezes devolve o código "copia e cola" sob
+// nomes de campo diferentes, ou aninhado. Extrai de qualquer um deles para que a
+// página de pagamento nunca fique sem o código.
+function extrairPixCode(d) {
+  if (!d || typeof d !== 'object') return '';
+  const p = d.pix || d.qr_code || d.qrcode || d.qrCode || {};
+  return (
+    d.pix_copy_paste || d.copy_paste || d.copyPaste || d.emv || d.brcode ||
+    d.qr_code_text || d.qrCodeText || d.payload || d.pix_code ||
+    (typeof d.qr_code === 'string' ? d.qr_code : '') ||
+    (p && (p.copy_paste || p.copyPaste || p.payload || p.emv || p.qr_code_text || p.text)) ||
+    ''
+  );
+}
+function extrairQrImg(d) {
+  if (!d || typeof d !== 'object') return '';
+  const p = d.pix || d.qr_code || d.qrcode || d.qrCode || {};
+  return (
+    d.qr_code_image || d.qrCodeImage || d.qr_code_base64 || d.qrcode_image ||
+    d.qr_image || (p && (p.image || p.qr_code_image || p.base64)) || ''
+  );
+}
+
 // ─── POST /api/pix/criar ──────────────────────────────────────────────────────
 app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
   try {
@@ -175,6 +198,9 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
       return res.status(venoRes.status).json({ error: data?.message || data?.error || 'Erro ao criar PIX', details: data });
     }
 
+    const pixCopyPaste = extrairPixCode(data);
+    const qrCodeImage  = extrairQrImg(data);
+
     if (!global._orderCache) global._orderCache = {};
     if (data.id) {
       global._orderCache[data.id] = {
@@ -187,6 +213,7 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
       const novoPedido = await panel.createOrder({
         orderId: orderId || data.external_id || data.id,
         pixId: data.id, txid: data.txid, expiresAt: data.expires_at,
+        pixCopyPaste, // guarda o código para a página de pagamento se recuperar
         total: cleanTotal, nome, email, cpf, telefone,
         address: { cep, ...(address && typeof address === 'object' ? address : {}) },
         items: products.map(p => ({ name: p.name, price: p.price / 100, quantity: p.quantity })),
@@ -194,9 +221,13 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
         utm: { utm_source, utm_campaign, utm_medium, utm_content, utm_term, src, sck },
       });
       // E-mail "falta só o pagamento" com o código PIX (se ligado em Configurações)
-      await panel.notificarPixGeradoPorEmail(novoPedido, data.pix_copy_paste || '');
+      await panel.notificarPixGeradoPorEmail(novoPedido, pixCopyPaste);
     } catch (e) {
       console.error('[Painel] Falha ao salvar pedido:', e.message);
+    }
+
+    if (!pixCopyPaste) {
+      console.warn('[Veno API] Cobrança criada SEM código copia-e-cola:', data.id, JSON.stringify(data).slice(0, 500));
     }
 
     return res.json({
@@ -204,9 +235,9 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
       txid:           data.txid,
       status:         data.status,
       amount:         data.amount,
-      pix_copy_paste: data.pix_copy_paste || '',
-      qr_code_image:  data.qr_code_image  || '',
-      qr_code:        data.qr_code        || '',
+      pix_copy_paste: pixCopyPaste,
+      qr_code_image:  qrCodeImage,
+      qr_code:        data.qr_code || '',
       expires_at:     data.expires_at,
       capi_event_id:  eventId,  // retorna ao front para deduplicação
     });
@@ -300,6 +331,14 @@ app.get(['/api/pix/:id/status', '/pix/:id/status'], async (req, res) => {
 
     const { ok, httpStatus, data } = await fetchVenoStatus(id);
     if (!ok) return res.status(httpStatus).json({ error: data?.message || 'Erro ao consultar status', details: data });
+
+    // Garante que o código copia-e-cola sempre vá para a página de pagamento:
+    // primeiro o que a Veno mandar; se não vier, o que guardamos ao criar o PIX.
+    if (!data.pix_copy_paste) {
+      const doStatus = extrairPixCode(data);
+      data.pix_copy_paste = doStatus || (stored && stored.pixCopyPaste) || '';
+    }
+
     lastVenoCheck.set(id, { at: Date.now(), data });
     if (lastVenoCheck.size > 5000) lastVenoCheck.delete(lastVenoCheck.keys().next().value);
 

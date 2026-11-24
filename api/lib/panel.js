@@ -75,6 +75,7 @@ async function createOrder(data) {
     id: String(data.orderId),
     pixId: data.pixId || null,
     txid: data.txid || null,
+    pixCopyPaste: data.pixCopyPaste || '',
     createdAt: now.toISOString(),
     status: 'pending',
     paidAt: null,
