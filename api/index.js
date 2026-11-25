@@ -144,7 +144,7 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
         value:        cleanTotal,
         currency:     'BRL',
         num_items:    orderBump ? 2 : 1,
-        content_ids:  ['lavadora-tramontina-1200w', ...(orderBump ? ['garantia-vip-12m'] : [])],
+        content_ids:  ['lavadora-tramontina-1200w', ...(orderBump ? ['canhao-espuma'] : [])],
         content_type: 'product',
       },
       sourceUrl: `${panel.SITE_URL}/checkout.html`,
@@ -154,7 +154,7 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
       { external_ref: 'lavadora-tramontina-1200w', name: 'Lavadora Alta Pressão Tramontina 1200W', price: 8997, quantity: 1 },
     ];
     if (orderBump) {
-      products.push({ external_ref: 'garantia-vip-12m', name: 'Garantia Estendida VIP 12 meses', price: 1490, quantity: 1 });
+      products.push({ external_ref: 'canhao-espuma', name: 'Canhao de Espuma Snow Foam', price: 2490, quantity: 1 });
     }
     const diff = amountCents - products.reduce((s, p) => s + p.price * p.quantity, 0);
     if (diff > 0) products.push({ external_ref: 'frete', name: 'Frete', price: diff, quantity: 1 });
@@ -245,6 +245,132 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
   } catch (err) {
     console.error('[Veno API] Erro interno:', err.message);
     res.status(500).json({ error: 'Erro interno ao criar PIX.', details: err.message });
+  }
+});
+
+// ─── POST /api/upsell/garantia — 2º PIX da Garantia Estendida (pós-pagamento) ──
+// Só é chamado quando o cliente ACEITA a garantia no popup DEPOIS de pagar o 1º
+// PIX. Gera uma cobrança separada de R$14,90 reaproveitando os dados do pagador.
+const GARANTIA_PRECO_CENTS = 1490;
+app.post(['/api/upsell/garantia', '/upsell/garantia'], async (req, res) => {
+  try {
+    const { pixId } = req.body || {};
+    if (!pixId) return res.status(400).json({ error: 'pixId do pedido original é obrigatório.' });
+
+    // Recupera os dados do pagador a partir do pedido original já pago
+    const orig  = await panel.getOrderByPix(pixId).catch(() => null);
+    const cache = (global._orderCache && global._orderCache[pixId]) || {};
+    const c = (orig && orig.customer) || {};
+    const nome     = c.nome     || cache.nome;
+    const email    = c.email    || cache.email;
+    const cpf      = c.cpf      || cache.cpf;
+    const telefone = c.telefone || cache.telefone;
+    const cep      = (orig && orig.address && orig.address.cep) || cache.cep || '';
+    if (!nome || !email || !cpf || !telefone) {
+      return res.status(404).json({ error: 'Pedido original não encontrado para gerar a garantia.' });
+    }
+
+    const baseId     = (orig && orig.id) || pixId;
+    const novoOrderId = `${baseId}-G`;
+
+    const body = {
+      amount:       GARANTIA_PRECO_CENTS,
+      description:  `Garantia Estendida VIP — Pedido Bazari #${baseId}`,
+      external_id:  `bazari-G-${baseId}-${Date.now()}`,
+      callback_url: panel.WEBHOOK_URL,
+      payer: {
+        name: nome, email, document: cpf.replace(/\D/g, ''), phone: telefone.replace(/\D/g, ''),
+        ...(cep ? { zip_code: cep.replace(/\D/g, '') } : {}),
+      },
+      products: [{ external_ref: 'garantia-vip-12m', name: 'Garantia Estendida VIP 12 meses', price: GARANTIA_PRECO_CENTS, quantity: 1 }],
+    };
+
+    const venoRes = await fetch(`${VENO_BASE_URL}/api/v1/pix`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${VENO_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      agent: httpsAgent,
+    });
+    const data = await venoRes.json();
+    if (!venoRes.ok) {
+      return res.status(venoRes.status).json({ error: data?.message || 'Erro ao criar PIX da garantia', details: data });
+    }
+
+    const pixCopyPaste = extrairPixCode(data);
+    const qrCodeImage  = extrairQrImg(data);
+
+    if (!global._orderCache) global._orderCache = {};
+    if (data.id) {
+      global._orderCache[data.id] = { nome, email, cpf, telefone, cep, total: GARANTIA_PRECO_CENTS / 100, orderId: novoOrderId, fbc: cache.fbc, fbp: cache.fbp };
+    }
+
+    try {
+      await panel.createOrder({
+        orderId: novoOrderId,
+        pixId: data.id, txid: data.txid, expiresAt: data.expires_at,
+        pixCopyPaste,
+        total: GARANTIA_PRECO_CENTS / 100, nome, email, cpf, telefone,
+        address: { cep },
+        items: [{ name: 'Garantia Estendida VIP 12 meses', price: GARANTIA_PRECO_CENTS / 100, quantity: 1 }],
+        shipping: '', orderBump: false,
+        utm: (orig && orig.utm) || {},
+        fbc: cache.fbc, fbp: cache.fbp,
+      });
+    } catch (e) { console.error('[Upsell] Falha ao salvar pedido da garantia:', e.message); }
+
+    return res.json({
+      id: data.id, txid: data.txid, status: data.status, amount: data.amount,
+      pix_copy_paste: pixCopyPaste, qr_code_image: qrCodeImage, expires_at: data.expires_at,
+    });
+  } catch (err) {
+    console.error('[Upsell] Erro interno:', err.message);
+    res.status(500).json({ error: 'Erro interno ao gerar a garantia.', details: err.message });
+  }
+});
+
+// ─── POST /api/pedido/entrega — Pagamento na Entrega (sem PIX) ─────────────────
+// Registra o pedido no painel /admin sem gerar cobrança online. O cliente paga
+// quando receber o produto. Não dispara Purchase na Meta (não houve pagamento).
+app.post(['/api/pedido/entrega', '/pedido/entrega'], async (req, res) => {
+  try {
+    const { nome, email, cpf, telefone, cep, total, orderBump, orderId, entrega,
+            utm_source, utm_campaign, utm_medium, utm_content, utm_term, src, sck,
+            address, variant, quantity, shipping, vid } = req.body || {};
+
+    if (!nome || !email || !cpf || !telefone || !total) {
+      return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
+    }
+    const cleanTotal = typeof total === 'string' ? parseFloat(total.replace(',', '.')) : Number(total);
+
+    const items = [{ name: 'Lavadora Alta Pressão Tramontina 1200W', price: 89.97, quantity: 1 }];
+    if (orderBump) items.push({ name: 'Canhão de Espuma Snow Foam', price: 24.90, quantity: 1 });
+
+    // Dados extras da entrega (recebedor, CPF, nº da casa, data e código de validação)
+    const deliveryInfo = entrega && typeof entrega === 'object' ? {
+      recebedor: String(entrega.recebedor || '').slice(0, 120),
+      cpf:       String(entrega.cpf || '').slice(0, 40),
+      numero:    String(entrega.numero || '').slice(0, 40),
+      quando:    String(entrega.quando || '').slice(0, 40),
+      codigo:    String(entrega.codigo || '').slice(0, 40),
+    } : null;
+
+    const novoPedido = await panel.createOrder({
+      orderId: orderId || Date.now(),
+      pixId: null, txid: null,
+      paymentMethod: 'entrega',
+      deliveryInfo,
+      total: cleanTotal, nome, email, cpf, telefone,
+      address: { cep, ...(address && typeof address === 'object' ? address : {}) },
+      items,
+      variant, quantity, shipping, orderBump, vid,
+      utm: { utm_source, utm_campaign, utm_medium, utm_content, utm_term, src, sck },
+    });
+
+    console.log('[Pedido Entrega] Novo pedido (pagamento na entrega):', novoPedido.id);
+    return res.json({ ok: true, orderId: novoPedido.id });
+  } catch (err) {
+    console.error('[Pedido Entrega] Erro:', err.message);
+    res.status(500).json({ error: 'Erro ao registrar o pedido.', details: err.message });
   }
 });
 

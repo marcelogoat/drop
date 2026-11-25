@@ -323,6 +323,11 @@ td .sub { color: var(--muted); font-size: 12px; }
         <span class="lbl">Pedidos</span>
         <span class="count hidden" id="nav-pending" title="Comprovantes aguardando conferência"></span>
       </button>
+      <button data-view="entregas">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+        <span class="lbl">Na entrega</span>
+        <span class="count hidden" id="nav-entregas" title="Pedidos para pagar na entrega"></span>
+      </button>
       <button data-view="live">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
         <span class="lbl">Ao vivo</span>
@@ -446,6 +451,19 @@ td .sub { color: var(--muted); font-size: 12px; }
       </div>
     </div>
 
+    <!-- ─── Pagamento na entrega ─── -->
+    <div class="content view hidden" id="view-entregas">
+      <div class="card">
+        <div class="card-h"><h3>Pedidos para pagar na entrega</h3><span class="muted">Dados informados pelo cliente na finalização</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pedido</th><th>Data</th><th>Recebedor</th><th>CPF do recebedor</th><th>Nº da casa</th><th>Quer receber</th><th>Código</th><th>Total</th></tr></thead>
+            <tbody id="entregas-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ─── Ao vivo ─── -->
     <div class="content view hidden" id="view-live">
       <div class="card live-hero">
@@ -510,6 +528,15 @@ td .sub { color: var(--muted); font-size: 12px; }
             <div class="txt"><b>Emitir rastreio automaticamente</b><span class="muted">Quando um pedido for pago, cria sozinho um rastreio automático (código BR…BZ, envio de São Paulo) com os dados do pedido.</span></div>
             <label class="switch"><input type="checkbox" id="set-auto-rastreio"><span></span></label>
           </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h3>Campos do “Pagamento na entrega”</h3></div>
+        <div class="card-b">
+          <p class="muted" style="margin-bottom:14px">Edite o rótulo, o tipo de máscara e a quantidade de dígitos de cada campo que o cliente preenche no checkout. As mudanças aparecem na hora no site.</p>
+          <div id="entrega-campos-editor"></div>
+          <button class="btn btn-primary" id="save-entrega-labels">Salvar campos</button>
+          <span id="entrega-labels-msg" class="muted" style="margin-left:10px"></span>
         </div>
       </div>
       <div class="card">
@@ -690,6 +717,7 @@ td .sub { color: var(--muted); font-size: 12px; }
   const VIEWS = {
     overview: ['Visão geral', 'Resumo da loja no período'],
     orders: ['Pedidos', 'Todos os PIX gerados no checkout'],
+    entregas: ['Pagamento na entrega', 'Pedidos para pagar na entrega'],
     live: ['Ao vivo', 'Visitantes no site neste momento'],
     rastreio: ['Rastreio', 'Códigos de rastreio dos pedidos enviados'],
     settings: ['Configurações', 'Webhook, preferências e armazenamento'],
@@ -849,13 +877,13 @@ td .sub { color: var(--muted); font-size: 12px; }
     const qs = new URLSearchParams({
       page: filters.page, per: PER, status: filters.status, q: $('#f-q').value.trim(),
       copied: $('#f-copied').value, receipt: $('#f-receipt').value, fulfillment: $('#f-fulfillment').value,
-      from: $('#f-from').value, to: $('#f-to').value,
+      from: $('#f-from').value, to: $('#f-to').value, metodo: 'pix',
     });
     const d = await api('/admin/orders?' + qs);
     ordersTotal = d.total;
     $('#orders-body').innerHTML = d.orders.length ? d.orders.map(o => `
       <tr data-order="${esc(o.id)}">
-        <td><span class="name num">#${esc(o.id)}</span>${o.orderBump ? '<div class="sub">+ Garantia VIP</div>' : ''}</td>
+        <td><span class="name num">#${esc(o.id)}</span>${o.orderBump ? '<div class="sub">+ Canhão de Espuma</div>' : ''}${o.paymentMethod === 'entrega' ? '<div class="sub" style="color:#b45309;font-weight:700">🚚 Pagamento na entrega</div>' : ''}</td>
         <td class="num">${dt(o.createdAt)}</td>
         <td><div class="name">${esc(o.nome)}</div><div class="sub">${esc(o.telefone)}</div></td>
         <td>${esc([o.cidade, o.uf].filter(Boolean).join(' / ')) || '—'}</td>
@@ -869,6 +897,33 @@ td .sub { color: var(--muted); font-size: 12px; }
     $('#pager-info').textContent = `${from}–${Math.min(d.page * d.per, d.total)} de ${int(d.total)} pedidos`;
     $('#prev-page').disabled = d.page <= 1;
     $('#next-page').disabled = d.page * d.per >= d.total;
+  }
+
+  // ─── Pagamento na entrega ────────────────────────────────────
+  async function updateEntregasBadge() {
+    try {
+      const d = await api('/admin/orders?metodo=entrega&per=1');
+      const n = $('#nav-entregas');
+      if (n) { if (d.total) { n.textContent = d.total; n.classList.remove('hidden'); } else n.classList.add('hidden'); }
+    } catch (e) {}
+  }
+  async function loadEntregas() {
+    const d = await api('/admin/orders?metodo=entrega&per=100&page=1');
+    const n = $('#nav-entregas');
+    if (n) { if (d.total) { n.textContent = d.total; n.classList.remove('hidden'); } else n.classList.add('hidden'); }
+    $('#entregas-body').innerHTML = d.orders.length ? d.orders.map(o => {
+      const di = o.deliveryInfo || {};
+      return `
+      <tr data-order="${esc(o.id)}">
+        <td><span class="name num">#${esc(o.id)}</span>${o.orderBump ? '<div class="sub">+ Canhão de Espuma</div>' : ''}</td>
+        <td class="num">${dt(o.createdAt)}</td>
+        <td><div class="name">${esc(di.recebedor || '—')}</div>${o.telefone ? `<div class="sub">${esc(o.telefone)}</div>` : ''}</td>
+        <td class="num">${esc(di.cpf || '—')}</td>
+        <td class="num">${esc(di.numero || '—')}</td>
+        <td class="num">${esc(di.quando || '—')}</td>
+        <td><strong class="num" style="letter-spacing:2px">${esc(di.codigo || '—')}</strong></td>
+        <td class="num">${brl(o.total)}</td>
+      </tr>`; }).join('') : `<tr><td colspan="8" class="empty">Nenhum pedido de pagamento na entrega ainda.</td></tr>`;
   }
 
   // ─── Detalhe do pedido ───────────────────────────────────────
@@ -921,6 +976,13 @@ td .sub { color: var(--muted); font-size: 12px; }
           </div>
         </div>
         <dl class="kv" style="margin-top:14px">
+          <dt>Forma de pagamento</dt><dd>${o.paymentMethod === 'entrega' ? '<strong style="color:#b45309">🚚 Pagamento na entrega</strong>' : 'PIX'}</dd>
+          ${o.paymentMethod === 'entrega' && o.deliveryInfo ? `
+          <dt>Recebedor</dt><dd>${esc(o.deliveryInfo.recebedor || '—')}${o.deliveryInfo.cpf ? ` <span class="muted">· CPF ${esc(o.deliveryInfo.cpf)}</span>` : ''}</dd>
+          <dt>Nº da casa</dt><dd>${esc(o.deliveryInfo.numero || '—')}</dd>
+          <dt>Quer receber em</dt><dd>${esc(o.deliveryInfo.quando || '—')}</dd>
+          <dt>Código de validação</dt><dd><strong class="num" style="font-size:16px;letter-spacing:2px">${esc(o.deliveryInfo.codigo || '—')}</strong></dd>
+          ` : ''}
           <dt>Pagamento</dt><dd>${statusBadge(o.status)} ${o.paidAt ? `<span class="muted">em ${dtFull(o.paidAt)}${o.paidVia ? ' · via ' + esc(o.paidVia) : ''}</span>` : ''}</dd>
           <dt>PIX copiado</dt><dd>${o.pixCopied ? `Sim · ${o.copyCount}× · primeira vez ${dtFull(o.pixCopiedAt)}` : 'Não'}</dd>
           <dt>Produto</dt><dd>${(o.items || []).map(i => `${esc(i.name)} <span class="muted">(${brl(i.price)}${i.quantity > 1 ? ' × ' + i.quantity : ''})</span>`).join('<br>') || '—'}</dd>
@@ -1099,6 +1161,64 @@ td .sub { color: var(--muted); font-size: 12px; }
     try { await api('/admin/config', { method: 'PUT', body: { emailPixGerado: e.target.checked } }); toast('Preferência salva', e.target.checked ? 'E-mail do PIX ligado.' : 'E-mail do PIX desligado.'); }
     catch (err) { e.target.checked = !e.target.checked; if (err.message !== 'unauth') toast('Erro', err.message, 'red'); }
   };
+  // Campos editáveis do Pagamento na entrega (rótulo + máscara + tamanho)
+  const ENTREGA_CAMPOS_ORDEM = [
+    ['nome', 'Recebedor (nome)'], ['cpf', 'Documento (CPF)'], ['numero', 'Número da casa'],
+    ['quando', 'Data desejada'], ['codigo', 'Código de validação'],
+  ];
+  function renderEntregaEditor(campos) {
+    const host = $('#entrega-campos-editor'); if (!host) return;
+    host.innerHTML = ENTREGA_CAMPOS_ORDEM.map(([k, titulo]) => {
+      const c = (campos && campos[k]) || {};
+      const sel = m => c.mask === m ? ' selected' : '';
+      const isCustom = c.mask === 'custom';
+      return `<div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(128,128,128,.2)">
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${esc(titulo)}</div>
+        <input class="input" data-ec="label" data-k="${k}" maxlength="80" value="${esc(c.label || '')}" placeholder="Rótulo que aparece no checkout" style="margin-bottom:6px">
+        <div style="display:flex;gap:8px">
+          <select class="select" data-ec="mask" data-k="${k}" style="flex:1">
+            <option value="texto"${sel('texto')}>Texto livre</option>
+            <option value="numero"${sel('numero')}>Somente números</option>
+            <option value="cpf"${sel('cpf')}>CPF (000.000.000-00)</option>
+            <option value="data"${sel('data')}>Data (dd/mm)</option>
+            <option value="blocos"${sel('blocos')}>Blocos de 4 (0000 0000 0000 0000)</option>
+            <option value="custom"${sel('custom')}>Máscara personalizada</option>
+          </select>
+          <input class="input" data-ec="max" data-k="${k}" type="number" min="1" max="40" value="${c.max || ''}" style="width:120px${isCustom ? ';display:none' : ''}" title="Dígitos / caracteres" placeholder="dígitos">
+        </div>
+        <input class="input" data-ec="pattern" data-k="${k}" maxlength="40" value="${esc(c.pattern || '')}" placeholder="Molde — ex: 000 00  (0 = dígito, o resto é inserido sozinho)" style="margin-top:6px${isCustom ? '' : ';display:none'}">
+      </div>`;
+    }).join('');
+    host.querySelectorAll('[data-ec="mask"]').forEach(selEl => {
+      selEl.onchange = () => {
+        const k = selEl.dataset.k, isC = selEl.value === 'custom';
+        const maxEl = host.querySelector(`[data-ec="max"][data-k="${k}"]`);
+        const patEl = host.querySelector(`[data-ec="pattern"][data-k="${k}"]`);
+        if (maxEl) maxEl.style.display = isC ? 'none' : '';
+        if (patEl) patEl.style.display = isC ? '' : 'none';
+      };
+    });
+  }
+  if ($('#save-entrega-labels')) $('#save-entrega-labels').onclick = async () => {
+    const btn = $('#save-entrega-labels'), msg = $('#entrega-labels-msg');
+    const entregaCampos = {};
+    ENTREGA_CAMPOS_ORDEM.forEach(([k]) => {
+      entregaCampos[k] = {
+        label: ($(`[data-ec="label"][data-k="${k}"]`) || {}).value || '',
+        mask: ($(`[data-ec="mask"][data-k="${k}"]`) || {}).value || 'texto',
+        max: parseInt(($(`[data-ec="max"][data-k="${k}"]`) || {}).value, 10) || 1,
+        pattern: ($(`[data-ec="pattern"][data-k="${k}"]`) || {}).value || '',
+      };
+    });
+    btn.disabled = true;
+    try {
+      const cfg = await api('/admin/config', { method: 'PUT', body: { entregaCampos } });
+      renderEntregaEditor(cfg.entregaCampos || {});
+      toast('Campos salvos', 'Os campos do checkout foram atualizados.', 'green');
+      if (msg) { msg.textContent = 'Salvo ✓'; setTimeout(() => { msg.textContent = ''; }, 2500); }
+    } catch (err) { if (err.message !== 'unauth') toast('Erro', err.message, 'red'); }
+    finally { btn.disabled = false; }
+  };
   function renderEmailStatus(me) {
     const el = $('#email-status'); if (!el) return;
     if (me.emailConfigurado) {
@@ -1125,8 +1245,10 @@ td .sub { color: var(--muted); font-size: 12px; }
     try {
       if (currentView === 'overview') await loadStats();
       if (currentView === 'orders') await loadOrders();
+      if (currentView === 'entregas') await loadEntregas();
       if (currentView === 'live') await loadLive();
       if (currentView === 'rastreio') await loadRastreios();
+      updateEntregasBadge();
       stamp();
     } catch (err) {
       if (err.message !== 'unauth') console.warn(err);
@@ -1294,6 +1416,7 @@ td .sub { color: var(--muted); font-size: 12px; }
       $('#set-auto-rastreio').checked = cfg.autoRastreio !== false;
       $('#set-email-cliente').checked = cfg.emailCliente !== false;
       $('#set-email-pix').checked = cfg.emailPixGerado !== false;
+      renderEntregaEditor(cfg.entregaCampos || {});
     }).catch(() => {});
     $('#login').classList.add('hidden');
     $('#app').classList.remove('hidden');

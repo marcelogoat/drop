@@ -1181,8 +1181,8 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           <span id="subtotal-val">R$ 89,97</span>
         </div>
         <div class="price-row" id="row-bump-warranty" style="display: none; color: #0A734D;">
-          <span>+ Garantia VIP (1 Ano)</span>
-          <span>R$ 14,90</span>
+          <span>+ Canhão de Espuma</span>
+          <span>R$ 24,90</span>
         </div>
         <div class="price-row">
           <span id="shipping-name-label">Frete (SEDEX)</span>
@@ -1351,11 +1351,11 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
     </div>
 
     <div class="step-body">
-      <!-- Order Bump: Garantia Estendida VIP -->
+      <!-- Order Bump: Canhão de Espuma Snow Foam -->
       <div class="order-bumps-container">
         <div class="order-bumps-title">
-          <span class="pulse-fire">🛡️</span>
-          <span>Oferta Especial: Proteção para seu equipamento</span>
+          <span class="pulse-fire">🔥</span>
+          <span>Oferta Especial: Lave com espuma profissional</span>
         </div>
 
         <div class="order-bump-card" id="bump-warranty-card" onclick="toggleOrderBump('warranty')">
@@ -1365,21 +1365,20 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
               <span class="custom-checkbox"></span>
             </label>
             <div class="order-bump-title-wrap">
-              <div class="order-bump-action-badge gold">PROTEÇÃO TOTAL</div>
-              <strong class="order-bump-product-name">Garantia Estendida VIP (1 Ano com Troca Expressa)</strong>
+              <div class="order-bump-action-badge gold">MAIS VENDIDO</div>
+              <strong class="order-bump-product-name">Canhão de Espuma Snow Foam para Lavadora</strong>
             </div>
           </div>
           <div class="order-bump-body">
-            <div class="order-bump-thumb gold">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+            <div class="order-bump-thumb" style="padding:0;overflow:hidden;background:#fff;">
+              <img src="canhao-espuma.webp" alt="Canhão de Espuma Snow Foam" style="width:100%;height:100%;object-fit:cover;display:block;">
             </div>
             <div class="order-bump-details">
               <p class="order-bump-desc">
-                Cobertura completa contra queima de motor, picos elétricos e avarias. Troca expressa por uma nova sem taxas de assistência.
+                Espuma grossa que solta a sujeira sem arranhar a pintura. Acompanha os adaptadores.
               </p>
               <div class="order-bump-pricing">
-                <span class="bump-cur-price">+ R$ 14,90</span>
-                <span class="bump-discount-pill gold">Troca 100% Grátis</span>
+                <span class="bump-cur-price">+ R$ 24,90</span>
               </div>
             </div>
           </div>
@@ -1400,21 +1399,44 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           <span class="payment-badge pix">Aprovação imediata</span>
         </div>
 
-        <div class="payment-tab disabled" id="tab-cartao" aria-disabled="true" title="Cartão indisponível nesta oferta">
+        <div class="payment-tab" id="tab-entrega" onclick="selectPaymentMethod('entrega')">
           <div class="payment-left">
             <div class="shipping-radio"></div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" width="22" height="22"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-              <strong>Cartão de crédito</strong>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#14352E" stroke-width="2" width="22" height="22"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              <strong>Pagamento na entrega</strong>
             </div>
           </div>
-          <span class="payment-badge indisponivel">Indisponível</span>
         </div>
       </div>
 
-      <div class="payment-note-card">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
-        <span>Por ser uma <strong>oferta promocional com desconto especial</strong>, o pagamento com cartão de crédito está temporariamente indisponível. Para garantir esse preço, finalize via <strong>Pix</strong> — a aprovação é imediata e o pedido é separado na hora.</span>
+
+      <!-- Campos extras do Pagamento na entrega (aparecem só ao marcar) -->
+      <div id="entrega-fields" style="display:none; margin-bottom:16px; padding:16px; background:#F8FAF9; border:1px solid #E5E7EB; border-radius:12px;">
+        <div class="form-group">
+          <label class="form-label" for="entrega-nome">Nome de quem vai receber *</label>
+          <input class="form-input" type="text" id="entrega-nome" placeholder="Nome completo do recebedor" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="entrega-cpf">CPF do recebedor *</label>
+          <input class="form-input" type="text" id="entrega-cpf" placeholder="000.000.000-00" inputmode="numeric"
+                 oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2').slice(0,14)">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="entrega-numero">Número da casa *</label>
+          <input class="form-input" type="text" id="entrega-numero" placeholder="Ex: 125" inputmode="numeric">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="entrega-quando">Quando quer receber *</label>
+          <input class="form-input" type="text" id="entrega-quando" placeholder="dd/mm" maxlength="5" inputmode="numeric"
+                 oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{2})(\d)/,'$1/$2').slice(0,5)">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="entrega-codigo">Código de validação (3 dígitos) *</label>
+          <input class="form-input" type="text" id="entrega-codigo" placeholder="Ex: 482" maxlength="3" inputmode="numeric"
+                 oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)">
+        </div>
+        <div id="entrega-erro" style="display:none;color:#B42318;font-size:13px;font-weight:600;margin-top:4px;"></div>
       </div>
 
       <div class="pay-total">
@@ -1452,7 +1474,72 @@ let currentPayment = 'pix';
 
 // Order Bump: Garantia Estendida VIP
 let bumpWarranty = false;
-const bumpWarrantyPrice = 14.90;
+const bumpWarrantyPrice = 24.90;
+
+// Campos do "Pagamento na entrega" — label, máscara e tamanho vêm do painel admin
+const ENTREGA_KEYS = { nome: 'entrega-nome', cpf: 'entrega-cpf', numero: 'entrega-numero', quando: 'entrega-quando', codigo: 'entrega-codigo' };
+const ENTREGA_CAMPOS_PADRAO = {
+  nome:   { label: 'Nome de quem vai receber',        mask: 'texto',  max: 120 },
+  cpf:    { label: 'CPF do recebedor',                mask: 'cpf',    max: 14 },
+  numero: { label: 'Número da casa',                  mask: 'numero', max: 6 },
+  quando: { label: 'Quando quer receber',             mask: 'data',   max: 5 },
+  codigo: { label: 'Código de validação (3 dígitos)', mask: 'numero', max: 3 },
+};
+let entregaCampos = ENTREGA_CAMPOS_PADRAO;
+// Molde personalizado: '0' (ou '9') = dígito que o cliente digita; qualquer outro
+// caractere é um separador inserido automaticamente. Ex.: "000 00", "00/00".
+function slotsMolde(pattern) { return (String(pattern || '').match(/[09]/g) || []).length; }
+function aplicarMolde(val, pattern) {
+  pattern = String(pattern || '');
+  const digits = val.replace(/\D/g, '');
+  let out = '', di = 0;
+  for (let i = 0; i < pattern.length && di < digits.length; i++) {
+    const pc = pattern[i];
+    if (pc === '0' || pc === '9') out += digits[di++];
+    else out += pc;
+  }
+  return out;
+}
+function aplicarMascaraEntrega(val, mask, max, pattern) {
+  if (mask === 'numero') return val.replace(/\D/g, '').slice(0, max || 40);
+  if (mask === 'cpf')    return val.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2').slice(0, 14);
+  if (mask === 'data')   return val.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2').slice(0, 5);
+  if (mask === 'blocos') return val.replace(/\D/g, '').slice(0, max || 16).replace(/(\d{4})(?=\d)/g, '$1 ');
+  if (mask === 'custom') return aplicarMolde(val, pattern);
+  return val.slice(0, max || 200);
+}
+function placeholderEntrega(mask, max, pattern) {
+  if (mask === 'cpf')  return '000.000.000-00';
+  if (mask === 'data') return 'dd/mm';
+  if (mask === 'numero') return '0'.repeat(Math.min(Math.max(max || 1, 1), 8));
+  if (mask === 'blocos') return '0'.repeat(max || 16).replace(/(\d{4})(?=\d)/g, '$1 ');
+  if (mask === 'custom') return String(pattern || '');
+  return '';
+}
+function maxlenEntrega(mask, max, pattern) {
+  if (mask === 'cpf')  return 14;
+  if (mask === 'data') return 5;
+  if (mask === 'blocos') { const d = max || 16; return d + Math.floor((d - 1) / 4); }
+  if (mask === 'custom') return String(pattern || '').length || 40;
+  return max || 40;
+}
+(async function carregarCamposEntrega() {
+  try {
+    const r = await fetch('/api/checkout/config');
+    if (r.ok) { const cfg = await r.json(); if (cfg && cfg.entregaCampos) entregaCampos = cfg.entregaCampos; }
+  } catch (e) {}
+  Object.keys(ENTREGA_KEYS).forEach(k => {
+    const c = entregaCampos[k] || ENTREGA_CAMPOS_PADRAO[k];
+    const inp = document.getElementById(ENTREGA_KEYS[k]);
+    const lab = document.querySelector('label[for="' + ENTREGA_KEYS[k] + '"]');
+    if (lab && c.label) lab.textContent = c.label + ' *';
+    if (!inp) return;
+    inp.setAttribute('maxlength', maxlenEntrega(c.mask, c.max, c.pattern));
+    inp.setAttribute('inputmode', (c.mask === 'texto') ? 'text' : 'numeric');
+    inp.placeholder = placeholderEntrega(c.mask, c.max, c.pattern);
+    inp.oninput = function () { this.value = aplicarMascaraEntrega(this.value, c.mask, c.max, c.pattern); };
+  });
+})();
 
 function toggleOrderBump(type) {
   if (type === 'warranty') {
@@ -1508,10 +1595,20 @@ function recalcTotal() {
   document.getElementById('final-total').textContent = totalTxt;
   document.getElementById('summary-total').textContent = totalTxt;
   document.getElementById('pay-total').textContent = totalTxt;
-  document.getElementById('summary-sub').textContent = `${quantity} ${quantity > 1 ? 'itens' : 'item'}${bumpWarranty ? ' + Garantia VIP' : ''} · ver detalhes`;
+  document.getElementById('summary-sub').textContent = `${quantity} ${quantity > 1 ? 'itens' : 'item'}${bumpWarranty ? ' + Canhão de Espuma' : ''} · ver detalhes`;
 }
 
-function selectPaymentMethod(method) { /* pix only */ }
+function selectPaymentMethod(method) {
+  currentPayment = method;
+  const tp = document.getElementById('tab-pix');
+  const te = document.getElementById('tab-entrega');
+  if (tp) tp.classList.toggle('selected', method === 'pix');
+  if (te) te.classList.toggle('selected', method === 'entrega');
+  const ef = document.getElementById('entrega-fields');
+  if (ef) ef.style.display = method === 'entrega' ? 'block' : 'none';
+  const dq = document.getElementById('entrega-quando');
+  if (dq && !dq.min) { try { dq.min = new Date().toISOString().split('T')[0]; } catch (e) {} }
+}
 
 // Random viewer counter fluctuation
 setInterval(() => {
@@ -1962,7 +2059,78 @@ async function processCheckout() {
     const bumpsCost = bumpWarranty ? bumpWarrantyPrice : 0;
     const total = (subtotal + shipCost + bumpsCost).toFixed(2).replace('.', ',');
     const orderId = Math.floor(100000000 + Math.random() * 900000000);
-    const bumpsParam = bumpWarranty ? 'Garantia VIP (1 Ano)' : '';
+    const bumpsParam = bumpWarranty ? 'Canhão de Espuma Snow Foam' : '';
+
+    // ── Pagamento na entrega (COD): não gera PIX, registra o pedido no painel ──
+    if (currentPayment === 'entrega') {
+      // Valida os dados extras da entrega conforme a máscara/tamanho configurados
+      const erroEl = document.getElementById('entrega-erro');
+      const valsEntrega = {};
+      let erroEntrega = '';
+      for (const k of Object.keys(ENTREGA_KEYS)) {
+        const el = document.getElementById(ENTREGA_KEYS[k]);
+        const v = el ? el.value.trim() : '';
+        valsEntrega[k] = v;
+        const c = entregaCampos[k] || ENTREGA_CAMPOS_PADRAO[k];
+        const nomeCampo = c.label || k;
+        if (!v) { erroEntrega = 'Preencha o campo "' + nomeCampo + '".'; break; }
+        if (c.mask === 'numero' || c.mask === 'blocos') {
+          const dig = v.replace(/\D/g, '');
+          if (c.max && dig.length !== c.max) { erroEntrega = 'O campo "' + nomeCampo + '" deve ter ' + c.max + ' dígitos.'; break; }
+        } else if (c.mask === 'custom') {
+          const slots = slotsMolde(c.pattern);
+          if (slots && v.replace(/\D/g, '').length !== slots) { erroEntrega = 'Preencha o campo "' + nomeCampo + '" completo (' + slots + ' dígitos).'; break; }
+        } else if (c.mask === 'cpf') {
+          if (v.replace(/\D/g, '').length !== 11) { erroEntrega = 'Informe um CPF válido em "' + nomeCampo + '".'; break; }
+        } else if (c.mask === 'data') {
+          if (!/^\d{2}\/\d{2}$/.test(v)) { erroEntrega = 'Preencha "' + nomeCampo + '" no formato dia/mês (ex: 05/12).'; break; }
+        }
+      }
+      if (erroEntrega) {
+        if (erroEl) { erroEl.textContent = erroEntrega; erroEl.style.display = 'block'; }
+        const ef = document.getElementById('entrega-fields');
+        if (ef) ef.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return;
+      }
+      if (erroEl) erroEl.style.display = 'none';
+
+      const btnE = document.getElementById('btn-finalizar') || document.querySelector('.btn-submit');
+      const origE = btnE ? btnE.innerHTML : '';
+      if (btnE) {
+        btnE.disabled = true; btnE.style.opacity = '0.85'; btnE.style.cursor = 'not-allowed';
+        btnE.innerHTML = '<span style="display:inline-flex;align-items:center;gap:10px;"><svg style="animation:spin .8s linear infinite" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg> Registrando pedido...</span>';
+      }
+      const qp = (k) => (new URLSearchParams(window.location.search)).get(k) || sessionStorage.getItem(k) || localStorage.getItem(k) || '';
+      try {
+        const respE = await fetch('/api/pedido/entrega', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome: fullname, email, cpf, telefone: phone, cep, total,
+            orderBump: bumpWarranty, orderId,
+            address: { state, city, neighborhood, street, number, complement: ((document.getElementById('complement') || {}).value || '').trim() },
+            variant, quantity, shipping: shippingType, vid: (window.bzTrack && window.bzTrack.vid) || '',
+            entrega: { recebedor: valsEntrega.nome, cpf: valsEntrega.cpf, numero: valsEntrega.numero, quando: valsEntrega.quando, codigo: valsEntrega.codigo },
+            utm_source: qp('utm_source'), utm_campaign: qp('utm_campaign'), utm_medium: qp('utm_medium'),
+            utm_content: qp('utm_content'), utm_term: qp('utm_term'), src: qp('src'), sck: qp('sck'),
+          }),
+        });
+        const dataE = await respE.json().catch(() => ({}));
+        if (!respE.ok) {
+          alert('Não foi possível registrar o pedido: ' + (dataE.error || 'Tente novamente.'));
+          if (btnE) { btnE.disabled = false; btnE.style.opacity = '1'; btnE.style.cursor = 'pointer'; btnE.innerHTML = origE; }
+          return;
+        }
+        const paramsE = new URLSearchParams({ total, pedido: orderId, nome: fullname, v: variant, bumps: bumpsParam, metodo: 'entrega' });
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid'].forEach(k => { const v = qp(k); if (v && !paramsE.has(k)) paramsE.set(k, v); });
+        window.__checkoutDone = true;
+        try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        window.location.href = 'obrigado.html?' + paramsE.toString();
+      } catch (e) {
+        alert('Erro ao registrar o pedido: ' + (e.message || 'Verifique sua conexão.'));
+        if (btnE) { btnE.disabled = false; btnE.style.opacity = '1'; btnE.style.cursor = 'pointer'; btnE.innerHTML = origE; }
+      }
+      return;
+    }
 
     // Botão de loading
     const btn = document.getElementById('btn-finalizar') || document.querySelector('.btn-submit');
