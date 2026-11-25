@@ -454,10 +454,10 @@ td .sub { color: var(--muted); font-size: 12px; }
     <!-- ─── Pagamento na entrega ─── -->
     <div class="content view hidden" id="view-entregas">
       <div class="card">
-        <div class="card-h"><h3>Pedidos para pagar na entrega</h3><span class="muted">Dados informados pelo cliente na finalização</span></div>
+        <div class="card-h"><h3 id="entregas-titulo">Pedidos para pagar na entrega</h3><span class="muted">Dados informados pelo cliente na finalização</span></div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Pedido</th><th>Data</th><th>Recebedor</th><th>CPF do recebedor</th><th>Nº da casa</th><th>Quer receber</th><th>Código</th><th>Total</th></tr></thead>
+            <thead><tr id="entregas-head"><th>Pedido</th><th>Data</th><th>Recebedor</th><th>CPF do recebedor</th><th>Nº da casa</th><th>Quer receber</th><th>Código</th><th>Total</th></tr></thead>
             <tbody id="entregas-body"></tbody>
           </table>
         </div>
@@ -533,7 +533,11 @@ td .sub { color: var(--muted); font-size: 12px; }
       <div class="card">
         <div class="card-h"><h3>Campos do “Pagamento na entrega”</h3></div>
         <div class="card-b">
-          <p class="muted" style="margin-bottom:14px">Edite o rótulo, o tipo de máscara e a quantidade de dígitos de cada campo que o cliente preenche no checkout. As mudanças aparecem na hora no site.</p>
+          <p class="muted" style="margin-bottom:14px">Edite o nome da opção, o rótulo, o tipo de máscara e a quantidade de dígitos de cada campo que o cliente preenche no checkout. As mudanças aparecem na hora no site.</p>
+          <div style="margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid rgba(128,128,128,.2)">
+            <label class="muted" style="display:block;margin-bottom:4px;font-size:12px">Nome da opção no checkout</label>
+            <input class="input" id="entrega-titulo-input" maxlength="60" placeholder="Ex: Pagamento na entrega">
+          </div>
           <div id="entrega-campos-editor"></div>
           <button class="btn btn-primary" id="save-entrega-labels">Salvar campos</button>
           <span id="entrega-labels-msg" class="muted" style="margin-left:10px"></span>
@@ -911,6 +915,15 @@ td .sub { color: var(--muted); font-size: 12px; }
     const d = await api('/admin/orders?metodo=entrega&per=100&page=1');
     const n = $('#nav-entregas');
     if (n) { if (d.total) { n.textContent = d.total; n.classList.remove('hidden'); } else n.classList.add('hidden'); }
+    // Cabeçalhos e título conforme o que foi configurado nas Configurações
+    try {
+      const cfg = await api('/admin/config');
+      const L = cfg.entregaCampos || {};
+      const head = $('#entregas-head');
+      if (head) head.innerHTML = ['Pedido', 'Data', (L.nome && L.nome.label) || 'Recebedor', (L.cpf && L.cpf.label) || 'CPF', (L.numero && L.numero.label) || 'Nº da casa', (L.quando && L.quando.label) || 'Quer receber', (L.codigo && L.codigo.label) || 'Código', 'Total'].map(t => `<th>${esc(t)}</th>`).join('');
+      const tit = $('#entregas-titulo');
+      if (tit && cfg.entregaTitulo) tit.textContent = 'Pedidos — ' + cfg.entregaTitulo;
+    } catch (e) {}
     $('#entregas-body').innerHTML = d.orders.length ? d.orders.map(o => {
       const di = o.deliveryInfo || {};
       return `
@@ -1210,10 +1223,12 @@ td .sub { color: var(--muted); font-size: 12px; }
         pattern: ($(`[data-ec="pattern"][data-k="${k}"]`) || {}).value || '',
       };
     });
+    const entregaTitulo = ($('#entrega-titulo-input') || {}).value || '';
     btn.disabled = true;
     try {
-      const cfg = await api('/admin/config', { method: 'PUT', body: { entregaCampos } });
+      const cfg = await api('/admin/config', { method: 'PUT', body: { entregaCampos, entregaTitulo } });
       renderEntregaEditor(cfg.entregaCampos || {});
+      if ($('#entrega-titulo-input')) $('#entrega-titulo-input').value = cfg.entregaTitulo || '';
       toast('Campos salvos', 'Os campos do checkout foram atualizados.', 'green');
       if (msg) { msg.textContent = 'Salvo ✓'; setTimeout(() => { msg.textContent = ''; }, 2500); }
     } catch (err) { if (err.message !== 'unauth') toast('Erro', err.message, 'red'); }
@@ -1417,6 +1432,7 @@ td .sub { color: var(--muted); font-size: 12px; }
       $('#set-email-cliente').checked = cfg.emailCliente !== false;
       $('#set-email-pix').checked = cfg.emailPixGerado !== false;
       renderEntregaEditor(cfg.entregaCampos || {});
+      if ($('#entrega-titulo-input')) $('#entrega-titulo-input').value = cfg.entregaTitulo || '';
     }).catch(() => {});
     $('#login').classList.add('hidden');
     $('#app').classList.remove('hidden');

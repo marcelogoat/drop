@@ -21,7 +21,8 @@ function mergeCampos(stored) {
   for (const k of ENTREGA_KEYS) out[k] = { ...ENTREGA_CAMPOS_DEFAULT[k], ...((stored && stored[k]) || {}) };
   return out;
 }
-const CONFIG_DEFAULT = { autoRastreio: true, emailCliente: true, emailPixGerado: true };
+const ENTREGA_TITULO_DEFAULT = 'Pagamento na entrega';
+const CONFIG_DEFAULT = { autoRastreio: true, emailCliente: true, emailPixGerado: true, entregaTitulo: ENTREGA_TITULO_DEFAULT };
 async function getConfig() {
   const c = await store.getJSON('config');
   const merged = { ...CONFIG_DEFAULT, ...(c || {}) };
@@ -448,7 +449,7 @@ function register(app) {
 
   // Campos da entrega — público, para o checkout renderizar
   app.get(both('/checkout/config'), async (req, res) => {
-    try { const cfg = await getConfig(); res.json({ entregaCampos: cfg.entregaCampos }); }
+    try { const cfg = await getConfig(); res.json({ entregaCampos: cfg.entregaCampos, entregaTitulo: cfg.entregaTitulo }); }
     catch (e) { res.status(500).json({ error: e.message }); }
   });
   app.get(both('/admin/config'), requireAdmin, async (req, res) => {
@@ -460,6 +461,7 @@ function register(app) {
       if (req.body && req.body.autoRastreio !== undefined) cfg.autoRastreio = !!req.body.autoRastreio;
       if (req.body && req.body.emailCliente !== undefined) cfg.emailCliente = !!req.body.emailCliente;
       if (req.body && req.body.emailPixGerado !== undefined) cfg.emailPixGerado = !!req.body.emailPixGerado;
+      if (req.body && req.body.entregaTitulo !== undefined) cfg.entregaTitulo = String(req.body.entregaTitulo).replace(/\s+/g, ' ').trim().slice(0, 60) || ENTREGA_TITULO_DEFAULT;
       if (req.body && req.body.entregaCampos && typeof req.body.entregaCampos === 'object') {
         const atual = mergeCampos(cfg.entregaCampos);
         for (const k of ENTREGA_KEYS) {

