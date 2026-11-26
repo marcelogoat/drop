@@ -2,7 +2,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="guard.js" defer></script>
 <title>Finalizar Compra — Bazari</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1495,6 +1496,12 @@ document.getElementById('product-title-display').textContent = `Econ Lavadora De
 
 // Quantities & Calculations
 let quantity = 1;
+// Quantidade vinda do carrinho (?qty=)
+try { const _q = parseInt((new URLSearchParams(window.location.search)).get('qty'), 10); if (_q >= 1 && _q <= 10) quantity = _q; } catch (e) {}
+window.addEventListener('DOMContentLoaded', function () {
+  const qv = document.getElementById('qty-val'); if (qv) qv.textContent = quantity;
+  if (typeof recalcTotal === 'function') recalcTotal();
+});
 const unitPrice = 89.97;
 let shippingType = 'sedex'; // 'sedex' or 'free'
 const sedexCost = 18.97;

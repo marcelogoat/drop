@@ -2,7 +2,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="guard.js" defer></script>
 <title>Bazari — Lavadora de Alta Pressão Tramontina 1200W</title>
 <meta name="description" content="Lavadora de Alta Pressão Tramontina 1200W 1500 PSI com 70% de desconto. Frete grátis para todo o Brasil e pagamento no PIX com aprovação imediata.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -365,6 +366,49 @@ img { max-width: 100%; height: auto; display: block; }
   margin-top: 8px;
   position: relative;
   z-index: 1;
+}
+
+/* Barra fixa de compra (preço + botão), estilo marketplace */
+.buy-bar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 200;
+  background: var(--white);
+  border-top: 1px solid #E5E7EB;
+  box-shadow: 0 -6px 24px rgba(0,0,0,0.10);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.buy-bar-price { display: flex; flex-direction: column; line-height: 1.05; flex: 0 0 auto; }
+.buy-bar-original { font-size: 12.5px; color: var(--stone); text-decoration: line-through; white-space: nowrap; }
+.buy-bar-current { font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.buy-bar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.buy-bar-add {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--white); color: var(--petrol);
+  border: 2px solid var(--petrol); border-radius: 12px;
+  padding: 10px 14px; font-size: 14px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; font-family: var(--font-heading);
+}
+.buy-bar-add svg { width: 18px; height: 18px; }
+.buy-bar-add:hover { background: #F3F4F6; }
+.buy-bar-btn {
+  background: var(--petrol); color: var(--white);
+  border: none; border-radius: 12px;
+  padding: 13px 22px; font-size: 15px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; font-family: var(--font-heading);
+}
+.buy-bar-btn:hover { background: var(--petrol-light); }
+body { padding-bottom: 86px; }
+@media (max-width: 380px) {
+  .buy-bar-current { font-size: 21px; }
+  .buy-bar-add { padding: 10px 10px; font-size: 13px; }
+  .buy-bar-btn { padding: 12px 16px; font-size: 14px; }
+}
+@media (min-width: 980px) {
+  .buy-bar { max-width: 1180px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; }
 }
 
 /* Variants */
@@ -1328,7 +1372,7 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           <circle cx="7" cy="18" r="2"></circle>
         </svg>
       </a>
-      <button class="header-btn" id="cart-btn" aria-label="Ver carrinho" title="Ver carrinho" onclick="goToCheckout()">
+      <button class="header-btn" id="cart-btn" aria-label="Ver carrinho" title="Ver carrinho" onclick="irParaCarrinho()">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
           <path d="M3 6h18"></path>
@@ -1394,17 +1438,6 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           <span class="rating-count">(2.428 avaliações)</span>
         </div>
 
-        <!-- PRICE BLOCK — Momento Marcante -->
-        <div class="price-block">
-          <div class="price-watermark" aria-hidden="true">70%</div>
-          <div class="price-original">R$ 295,90</div>
-          <div class="price-row">
-            <span class="price-current">R$ 89,97</span>
-            <span class="price-discount">70% OFF</span>
-          </div>
-          <div class="price-installments">à vista no PIX · aprovação imediata</div>
-        </div>
-
         <!-- Variants -->
         <div class="variant-section">
           <span class="variant-label">Voltagem:</span>
@@ -1414,39 +1447,6 @@ src="https://www.facebook.com/tr?id=1715304620163972&ev=PageView&noscript=1"
           </div>
         </div>
 
-        <!-- Trust Indicators -->
-        <div class="trust-indicators">
-          <div class="trust-item">
-            <div class="trust-icon green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-3"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-            </div>
-            <div class="trust-text">
-              <strong>Frete grátis para todo o Brasil</strong>
-              <span>Entrega em 8 a 12 dias úteis · ou SEDEX em 3 a 6 dias</span>
-            </div>
-          </div>
-          <div class="trust-item">
-            <div class="trust-icon green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v10h10"/><path d="M3.51 15a9 9 0 1014.85-10.34"/></svg>
-            </div>
-            <div class="trust-text">
-              <strong>Devolução grátis em 30 dias</strong>
-              <span>Sem burocracia</span>
-            </div>
-          </div>
-          <div class="trust-item">
-            <div class="trust-icon green">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-            </div>
-            <div class="trust-text">
-              <strong>Compra garantida</strong>
-              <span>Seu dinheiro protegido</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- CTA -->
-        <button class="cta-button" id="buy-now-btn" onclick="goToCheckout()">Comprar agora</button>
       </div>
     </div>
   </div>
@@ -1770,6 +1770,18 @@ function goToCheckout() {
   window.location.href = 'checkout.html?' + p.toString();
   return;
 }
+function irParaCarrinho() {
+  var p = new URLSearchParams(window.location.search);
+  p.set('v', selectedVariant);
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid'].forEach(function(k){
+    if (!p.has(k)) { var v = sessionStorage.getItem(k) || localStorage.getItem(k); if (v) p.set(k, v); }
+  });
+  window.location.href = 'carrinho.html?' + p.toString();
+}
+function adicionarAoCarrinho() {
+  try { localStorage.setItem('bazari_cart', JSON.stringify({ variant: selectedVariant, qty: 1 })); } catch (e) {}
+  irParaCarrinho();
+}
 function _unused_old_goToCheckout() {
   window.location.href = 'checkout.html?v=' + encodeURIComponent(selectedVariant);
 }
@@ -1793,6 +1805,21 @@ document.addEventListener('keydown', function(e) {
   }
 });
 </script>
+
+<!-- Barra fixa de compra (preço + botão), estilo marketplace -->
+<div class="buy-bar" id="buy-bar">
+  <div class="buy-bar-price">
+    <span class="buy-bar-original">R$ 295,90</span>
+    <span class="buy-bar-current">R$ 89,97</span>
+  </div>
+  <div class="buy-bar-actions">
+    <button class="buy-bar-add" type="button" onclick="adicionarAoCarrinho()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      Adicionar
+    </button>
+    <button class="buy-bar-btn" type="button" onclick="goToCheckout()">Comprar agora</button>
+  </div>
+</div>
 
 <script src="track.js" data-section="lp" defer></script>
 </body>

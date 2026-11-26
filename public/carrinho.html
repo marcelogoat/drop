@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="guard.js" defer></script>
+<title>Seu Carrinho — Bazari</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root{
+  --petrol:#1B3A4B; --petrol-light:#24495C; --amber:#E8A317; --linen:#F4F1EC;
+  --ink:#1A1A1A; --pine:#2D6A4F; --pine-light:#E8F5EE; --stone:#8B8680;
+  --stone-light:#C4C0BA; --white:#FFFFFF;
+  --font-heading:'Space Grotesk',system-ui,sans-serif; --font-body:'DM Sans',system-ui,sans-serif;
+}
+body{ font-family:var(--font-body); color:var(--ink); background:var(--linen); line-height:1.6; }
+.top-bar{ background:var(--petrol); color:#fff; text-align:center; font-size:12.5px; font-weight:600; padding:7px 12px; letter-spacing:.3px; }
+.header{ background:var(--white); border-bottom:1px solid #ECE8E1; position:sticky; top:0; z-index:20; }
+.header-inner{ max-width:1180px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+.brand-logo{ height:34px; width:auto; display:block; }
+.back-link{ display:inline-flex; align-items:center; gap:6px; color:var(--petrol); font-weight:700; font-size:14px; text-decoration:none; }
+.wrap{ max-width:1180px; margin:0 auto; padding:24px 16px 120px; }
+h1{ font-family:var(--font-heading); font-size:24px; font-weight:700; margin-bottom:4px; }
+.sub{ color:var(--stone); font-size:14px; margin-bottom:22px; }
+.grid{ display:grid; grid-template-columns:1fr; gap:20px; }
+@media(min-width:900px){ .grid{ grid-template-columns:1.6fr 1fr; align-items:start; } }
+.card{ background:var(--white); border:1px solid #ECE8E1; border-radius:16px; padding:18px; }
+.item{ display:flex; gap:14px; align-items:center; }
+.item-img{ width:92px; height:92px; min-width:92px; background:var(--linen); border-radius:12px; object-fit:contain; padding:6px; }
+.item-info{ flex:1; min-width:0; }
+.item-name{ font-weight:700; font-size:15px; line-height:1.3; margin-bottom:4px; }
+.item-tag{ display:inline-block; font-size:12px; color:var(--pine); background:var(--pine-light); padding:2px 8px; border-radius:6px; font-weight:600; margin-bottom:8px; }
+.item-price{ font-family:var(--font-heading); font-weight:700; font-size:18px; }
+.item-original{ font-size:13px; color:var(--stone); text-decoration:line-through; margin-right:8px; }
+.qty{ display:inline-flex; align-items:center; border:1.5px solid var(--stone-light); border-radius:10px; overflow:hidden; margin-top:10px; }
+.qty button{ width:36px; height:36px; background:var(--white); border:none; font-size:18px; cursor:pointer; color:var(--petrol); font-weight:700; }
+.qty button:hover{ background:var(--linen); }
+.qty span{ min-width:40px; text-align:center; font-weight:700; }
+.benefits{ margin-top:16px; border-top:1px solid #ECE8E1; padding-top:14px; display:flex; flex-direction:column; gap:10px; }
+.benefit{ display:flex; gap:10px; align-items:center; font-size:13.5px; color:#374151; }
+.benefit svg{ width:20px; height:20px; color:var(--pine); flex:0 0 20px; }
+.sum-row{ display:flex; justify-content:space-between; font-size:14px; margin-bottom:10px; color:#374151; }
+.sum-row.total{ border-top:1px solid #ECE8E1; padding-top:12px; margin-top:4px; font-size:17px; font-weight:800; color:var(--ink); }
+.sum-total-val{ font-family:var(--font-heading); color:var(--pine); }
+.btn-finalizar{ width:100%; background:var(--petrol); color:#fff; border:none; border-radius:12px; padding:16px; font-size:16px; font-weight:800; font-family:var(--font-heading); cursor:pointer; margin-top:8px; }
+.btn-finalizar:hover{ background:var(--petrol-light); }
+.secure{ text-align:center; font-size:12.5px; color:var(--stone); margin-top:12px; display:flex; align-items:center; justify-content:center; gap:6px; }
+.secure svg{ width:14px; height:14px; }
+.empty{ text-align:center; padding:40px 20px; }
+.empty a{ color:var(--petrol); font-weight:700; }
+</style>
+</head>
+<body>
+<div class="top-bar">🛒 Produto adicionado ao carrinho</div>
+<header class="header">
+  <div class="header-inner">
+    <a href="index.html"><img src="logo.png" alt="Bazari" class="brand-logo"></a>
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Continuar comprando
+    </a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Seu carrinho</h1>
+  <div class="sub" id="cart-sub">1 item no carrinho</div>
+
+  <div class="grid">
+    <div class="card" id="cart-items">
+      <div class="item">
+        <img class="item-img" src="https://images.weserv.nl/?url=http2.mlstatic.com/D_NQ_NP_2X_815918-MLA96087687835_102025-F.webp&w=400&output=webp&q=85" alt="Lavadora de Alta Pressão Tramontina 1200W">
+        <div class="item-info">
+          <div class="item-name">Lavadora de Alta Pressão Tramontina 1200W 1500 PSI</div>
+          <span class="item-tag" id="item-variant">Voltagem: 127V</span>
+          <div class="item-price"><span class="item-original">R$ 295,90</span>R$ 89,97</div>
+          <div class="qty">
+            <button type="button" onclick="mudarQtd(-1)" aria-label="Diminuir">−</button>
+            <span id="qty-val">1</span>
+            <button type="button" onclick="mudarQtd(1)" aria-label="Aumentar">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="benefits">
+        <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-3"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Frete grátis para todo o Brasil</div>
+        <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4v10h10"/><path d="M3.51 15a9 9 0 1014.85-10.34"/></svg> Devolução grátis em 30 dias</div>
+        <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg> Compra garantida · seu dinheiro protegido</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sum-row"><span>Subtotal</span><span id="sum-sub">R$ 89,97</span></div>
+      <div class="sum-row"><span>Frete</span><span style="color:var(--pine);font-weight:700">Grátis</span></div>
+      <div class="sum-row total"><span>Total</span><span class="sum-total-val" id="sum-total">R$ 89,97</span></div>
+      <button class="btn-finalizar" type="button" onclick="finalizar()">Finalizar compra</button>
+      <div class="secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Pagamento 100% seguro
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+var UNIT = 89.97;
+var params = new URLSearchParams(window.location.search);
+function lerCarrinho(){
+  try { var c = JSON.parse(localStorage.getItem('bazari_cart') || 'null'); if (c && c.variant) return c; } catch(e){}
+  return { variant: params.get('v') || '127V', qty: 1 };
+}
+var cart = lerCarrinho();
+if (cart.qty < 1) cart.qty = 1;
+function brl(n){ return 'R$ ' + n.toFixed(2).replace('.', ','); }
+function render(){
+  document.getElementById('item-variant').textContent = 'Voltagem: ' + cart.variant;
+  document.getElementById('qty-val').textContent = cart.qty;
+  var sub = UNIT * cart.qty;
+  document.getElementById('sum-sub').textContent = brl(sub);
+  document.getElementById('sum-total').textContent = brl(sub);
+  document.getElementById('cart-sub').textContent = cart.qty + (cart.qty > 1 ? ' itens no carrinho' : ' item no carrinho');
+  try { localStorage.setItem('bazari_cart', JSON.stringify(cart)); } catch(e){}
+}
+function mudarQtd(d){ cart.qty = Math.max(1, Math.min(10, cart.qty + d)); render(); }
+function finalizar(){
+  var p = new URLSearchParams(window.location.search);
+  p.set('v', cart.variant);
+  p.set('qty', cart.qty);
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','src','sck','fbclid'].forEach(function(k){
+    if (!p.has(k)) { var v = sessionStorage.getItem(k) || localStorage.getItem(k); if (v) p.set(k, v); }
+  });
+  window.location.href = 'checkout.html?' + p.toString();
+}
+render();
+</script>
+</body>
+</html>
