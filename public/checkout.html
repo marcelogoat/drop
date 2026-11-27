@@ -2240,18 +2240,12 @@ async function processCheckout() {
       return;
     }
 
-    // Às vezes a 1ª resposta vem sem o código copia-e-cola. Tenta mais uma vez
-    // antes de seguir, para o cliente nunca cair numa tela de PIX sem código.
-    if (ok && pix && pix.id && !pix.pix_copy_paste) {
-      console.warn('[Checkout] PIX sem código na 1ª resposta — tentando novamente...');
-      try {
-        const retry = await gerarPix();
-        if (retry.ok && retry.pix && retry.pix.pix_copy_paste) pix = retry.pix;
-      } catch (e) { console.warn('[Checkout] Retry falhou:', e); }
-    }
-
-    if (!pix || !pix.pix_copy_paste) {
-      alert('Não foi possível gerar o código PIX agora. Por favor, toque em FINALIZAR COMPRA novamente.');
+    // Se a cobrança foi criada (tem id), SEGUE para a tela de PIX mesmo que o
+    // código ainda não tenha vindo — a pagar.html recupera o código pelo polling
+    // (o backend reconsulta a cobrança na Veno). Nunca pedimos para o cliente
+    // clicar de novo, pois cada clique gerava uma cobrança duplicada.
+    if (!pix || !pix.id) {
+      alert('Não foi possível gerar o PIX agora. Verifique sua conexão e tente novamente em instantes.');
       if (btn) {
         btn.disabled = false;
         btn.style.opacity = '1';

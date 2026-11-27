@@ -97,24 +97,29 @@ rastreio.register(app, panel.requireAdmin);
 // A Veno (e gateways em geral) às vezes devolve o código "copia e cola" sob
 // nomes de campo diferentes, ou aninhado. Extrai de qualquer um deles para que a
 // página de pagamento nunca fique sem o código.
+// Um valor é um código PIX copia-e-cola se for texto longo e NÃO for imagem/URL.
+function ehCodigoPix(v) { return typeof v === 'string' && v.trim().length > 20 && !/^(data:|https?:)/i.test(v.trim()); }
 function extrairPixCode(d) {
   if (!d || typeof d !== 'object') return '';
   const p = d.pix || d.qr_code || d.qrcode || d.qrCode || {};
-  return (
-    d.pix_copy_paste || d.copy_paste || d.copyPaste || d.emv || d.brcode ||
-    d.qr_code_text || d.qrCodeText || d.payload || d.pix_code ||
-    (typeof d.qr_code === 'string' ? d.qr_code : '') ||
-    (p && (p.copy_paste || p.copyPaste || p.payload || p.emv || p.qr_code_text || p.text)) ||
-    ''
-  );
+  const cands = [
+    d.pix_copy_paste, d.copy_paste, d.copyPaste, d.emv, d.brcode,
+    d.qr_code_text, d.qrCodeText, d.payload, d.pix_code,
+    // A Veno às vezes coloca o copia-e-cola NESTE campo (apesar do nome "image").
+    d.qr_code_image, d.qrCodeImage,
+    (typeof d.qr_code === 'string' ? d.qr_code : ''),
+    p && (p.copy_paste || p.copyPaste || p.payload || p.emv || p.qr_code_text || p.text || p.pix_copy_paste),
+  ];
+  for (const c of cands) { if (ehCodigoPix(c)) return c.trim(); }
+  return '';
 }
 function extrairQrImg(d) {
   if (!d || typeof d !== 'object') return '';
   const p = d.pix || d.qr_code || d.qrcode || d.qrCode || {};
-  return (
-    d.qr_code_image || d.qrCodeImage || d.qr_code_base64 || d.qrcode_image ||
-    d.qr_image || (p && (p.image || p.qr_code_image || p.base64)) || ''
-  );
+  const cand = d.qr_code_image || d.qrCodeImage || d.qr_code_base64 || d.qrcode_image ||
+               d.qr_image || (p && (p.image || p.qr_code_image || p.base64)) || '';
+  // Só é imagem de verdade se for data: ou URL; senão é payload (a página gera o QR).
+  return /^(data:|https?:)/i.test(cand) ? cand : '';
 }
 
 // ─── POST /api/pix/criar ──────────────────────────────────────────────────────
@@ -198,8 +203,17 @@ app.post(['/api/pix/criar', '/pix/criar'], async (req, res) => {
       return res.status(venoRes.status).json({ error: data?.message || data?.error || 'Erro ao criar PIX', details: data });
     }
 
-    const pixCopyPaste = extrairPixCode(data);
-    const qrCodeImage  = extrairQrImg(data);
+    let pixCopyPaste = extrairPixCode(data);
+    let qrCodeImage  = extrairQrImg(data);
+
+    // Se a resposta do criar veio sem o copia-e-cola, reconsulta a cobrança.
+    if (!pixCopyPaste && data.id) {
+      const full = await fetchVenoCharge(data.id);
+      if (full) {
+        pixCopyPaste = extrairPixCode(full) || pixCopyPaste;
+        qrCodeImage  = extrairQrImg(full)  || qrCodeImage;
+      }
+    }
 
     if (!global._orderCache) global._orderCache = {};
     if (data.id) {
@@ -390,6 +404,19 @@ async function fetchVenoStatus(pixId) {
   return { ok: venoRes.ok, httpStatus: venoRes.status, data };
 }
 
+// Reconsulta a cobrança completa (inclui o copia-e-cola). O /status do PIX NÃO
+// traz o código; este endpoint é a forma de recuperá-lo quando o criar não veio.
+async function fetchVenoCharge(id) {
+  try {
+    const r = await fetch(`${VENO_BASE_URL}/api/v1/charges/${encodeURIComponent(id)}`, {
+      headers: { 'Authorization': `Bearer ${VENO_API_KEY}` },
+      agent:   httpsAgent,
+    });
+    const data = await r.json().catch(() => ({}));
+    return r.ok ? data : null;
+  } catch (e) { return null; }
+}
+
 function firePurchase(pixId, order, data) {
   const c = order?.customer || {};
   const cached = global._orderCache?.[pixId] || {};
@@ -458,11 +485,16 @@ app.get(['/api/pix/:id/status', '/pix/:id/status'], async (req, res) => {
     const { ok, httpStatus, data } = await fetchVenoStatus(id);
     if (!ok) return res.status(httpStatus).json({ error: data?.message || 'Erro ao consultar status', details: data });
 
-    // Garante que o código copia-e-cola sempre vá para a página de pagamento:
-    // primeiro o que a Veno mandar; se não vier, o que guardamos ao criar o PIX.
-    if (!data.pix_copy_paste) {
-      const doStatus = extrairPixCode(data);
-      data.pix_copy_paste = doStatus || (stored && stored.pixCopyPaste) || '';
+    // Garante que o código copia-e-cola sempre vá para a página de pagamento.
+    // O /status da Veno NÃO traz o código, então tentamos: o que guardamos ao
+    // criar; e, por último, reconsultamos a cobrança completa (charges/{id}).
+    if (!extrairPixCode(data)) {
+      let code = (stored && stored.pixCopyPaste) || '';
+      if (!code) {
+        const full = await fetchVenoCharge(id);
+        if (full) code = extrairPixCode(full);
+      }
+      if (code) data.pix_copy_paste = code;
     }
 
     lastVenoCheck.set(id, { at: Date.now(), data });
