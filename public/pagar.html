@@ -915,13 +915,12 @@ function onPaymentConfirmed(s) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="32" height="32"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <h2 style="color: #064E3B; font-size: 22px; font-weight: 800; margin-bottom: 8px;">Pagamento Confirmado!</h2>
-    <p style="color: #047857; font-size: 14px; margin-bottom: 0;">Seu pedido foi aprovado com sucesso. 🎉</p>
+    <p style="color: #047857; font-size: 14px; margin-bottom: 0;">Seu pedido foi aprovado. Redirecionando…</p>
   `;
   mainWrapper.prepend(redirectBanner);
 
-  // Oferece a Garantia Estendida (upsell pós-pagamento). O cliente decide: só
-  // gera o 2º PIX se ele aceitar. Recusando, segue para a tela do pedido.
-  setTimeout(abrirUpsellGarantia, 900);
+  // Pagamento confirmado → vai direto para a tela de obrigado.
+  setTimeout(irParaObrigado, 1200);
 }
 
 // Monta a URL da tela de obrigado e redireciona
@@ -942,58 +941,6 @@ function irParaObrigado() {
     }
   });
   window.location.href = 'obrigado.html?' + thankYouParams.toString();
-}
-
-// ── Upsell da Garantia Estendida (pós-pagamento) ───────────────────────────
-function abrirUpsellGarantia() {
-  const m = document.getElementById('upsell-garantia');
-  if (m) m.style.display = 'flex'; else irParaObrigado();
-}
-function recusarGarantia() { irParaObrigado(); }
-let ugPollInterval = null;
-async function aceitarGarantia() {
-  const btn = document.getElementById('ug-sim');
-  if (btn) { btn.disabled = true; btn.style.opacity = '0.8'; btn.textContent = 'Gerando PIX da garantia...'; }
-  try {
-    const r = await fetch('/api/upsell/garantia', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pixId: pixId }),
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.pix_copy_paste) {
-      alert('Não foi possível gerar o PIX da garantia agora. Você pode seguir para o seu pedido.');
-      if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'SIM, QUERO ADICIONAR'; }
-      return;
-    }
-    // Troca o conteúdo do modal para a tela de pagamento da garantia
-    document.getElementById('ug-oferta').style.display = 'none';
-    document.getElementById('ug-pix').style.display = 'block';
-    document.getElementById('ug-code').value = d.pix_copy_paste;
-    document.getElementById('ug-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(d.pix_copy_paste) + '&margin=1';
-    const gid = d.id;
-    ugPollInterval = setInterval(async () => {
-      try {
-        const rr = await fetch('/api/pix/' + encodeURIComponent(gid) + '/status');
-        if (!rr.ok) return;
-        const ss = await rr.json();
-        if (ss.status === 'paid') {
-          clearInterval(ugPollInterval);
-          document.getElementById('ug-pix').innerHTML = '<div style="text-align:center;padding:16px 0;"><div style="font-size:34px;">✅</div><h3 style="color:#064E3B;margin:8px 0;">Garantia ativada!</h3><p style="color:#047857;font-size:14px;">Redirecionando para o seu pedido...</p></div>';
-          setTimeout(irParaObrigado, 1600);
-        }
-      } catch (e) {}
-    }, 4000);
-  } catch (e) {
-    alert('Erro ao gerar a garantia. Você pode seguir para o seu pedido.');
-    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'SIM, QUERO ADICIONAR'; }
-  }
-}
-function copiarGarantia(btn) {
-  const code = document.getElementById('ug-code').value;
-  navigator.clipboard.writeText(code).then(() => {
-    const orig = btn.textContent; btn.textContent = '✓ Código copiado!';
-    setTimeout(() => { btn.textContent = orig; }, 2000);
-  });
 }
 
 // ── Polling inteligente de status (imediato + a cada 5s; o webhook confirma na hora) ──
@@ -1168,53 +1115,6 @@ async function sendReceipt() {
   }
 }
 </script>
-
-<!-- ===== Upsell pós-pagamento: Garantia Estendida ===== -->
-<div id="upsell-garantia" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.6);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:18px;">
-  <div style="background:#fff;border-radius:18px;max-width:430px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.3);overflow:hidden;animation:upsellIn .25s ease;">
-    <div style="background:linear-gradient(135deg,#14352E,#0A734D);padding:20px;text-align:center;color:#fff;">
-      <div style="width:52px;height:52px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="28" height="28"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
-      </div>
-      <div style="font-size:12px;font-weight:700;letter-spacing:.5px;opacity:.85;">PAGAMENTO APROVADO ✓</div>
-      <h3 style="font-size:19px;font-weight:800;margin:4px 0 0;">Proteja sua lavadora por 1 ano</h3>
-    </div>
-
-    <!-- Estado A: oferta -->
-    <div id="ug-oferta" style="padding:20px;">
-      <p style="font-size:14px;color:#374151;line-height:1.55;margin:0 0 14px;">
-        Só agora, aproveite para adicionar a <strong>Garantia Estendida VIP</strong>: cobertura total contra queima de motor, picos elétricos e avarias — com <strong>troca expressa por uma nova</strong>, sem taxas de assistência.
-      </p>
-      <div style="display:flex;align-items:baseline;gap:8px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-        <span style="font-size:13px;color:#047857;">Apenas</span>
-        <strong style="font-size:22px;color:#047857;">+ R$ 14,90</strong>
-      </div>
-      <button id="ug-sim" onclick="aceitarGarantia()" style="width:100%;background:#0A734D;color:#fff;border:none;border-radius:12px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;">
-        SIM, QUERO ADICIONAR
-      </button>
-      <button onclick="recusarGarantia()" style="width:100%;background:transparent;color:#6B7280;border:none;padding:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;">
-        Não, ir para meu pedido
-      </button>
-    </div>
-
-    <!-- Estado B: 2º PIX da garantia -->
-    <div id="ug-pix" style="display:none;padding:20px;">
-      <p style="font-size:14px;color:#374151;text-align:center;margin:0 0 12px;">Pague <strong>R$ 14,90</strong> no PIX abaixo para ativar sua garantia:</p>
-      <div style="text-align:center;margin-bottom:12px;">
-        <img id="ug-qr" src="" alt="QR Code da Garantia" style="width:200px;height:200px;border:1px solid #E5E7EB;border-radius:12px;">
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input id="ug-code" type="text" readonly value="" style="flex:1;min-width:0;border:1px solid #E5E7EB;border-radius:10px;padding:10px;font-size:12px;color:#374151;">
-        <button onclick="copiarGarantia(this)" style="background:#14352E;color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Copiar</button>
-      </div>
-      <div id="ug-status" style="font-size:12.5px;color:#059669;text-align:center;font-weight:600;margin-bottom:12px;">Aguardando o pagamento da garantia...</div>
-      <button onclick="irParaObrigado()" style="width:100%;background:transparent;color:#6B7280;border:none;padding:6px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;">
-        Ver meu pedido ›
-      </button>
-    </div>
-  </div>
-</div>
-<style>@keyframes upsellIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}</style>
 
 <script src="track.js" data-section="pix" defer></script>
 </body>
